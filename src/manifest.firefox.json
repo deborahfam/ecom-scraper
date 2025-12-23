@@ -1,95 +1,96 @@
 {
 	"manifest_version": 3,
 	"default_locale": "en",
-	"name": "Obsidian Web Clipper",
-	"homepage_url": "https://obsidian.md/",
-	"version": "0.12.0",
-	"description": "Save and highlight web pages in a private and durable format that you can access offline. The official extension for Obsidian.",
+	"name": "Ecommerce Product Scraper",
+	"homepage_url": "https://github.com/deborahfam/ecom-scraper",
+	"version": "0.1.0",
+	"description": "Extract structured product data from e-commerce websites. Capture product names, prices, images, and metadata directly from web pages.",
 	"permissions": [
-		"activeTab",
-		"clipboardWrite",
-		"contextMenus",
-		"storage",
-		"scripting"
+	  "activeTab",
+	  "clipboardWrite",
+	  "contextMenus",
+	  "storage",
+	  "scripting"
 	],
 	"host_permissions": [
-		"<all_urls>",
-		"http://*/*",
-		"https://*/*"
+	  "http://*/*",
+	  "https://*/*"
 	],
 	"action": {
-		"default_popup": "popup.html",
-		"default_icon": {
-			"16": "icons/icon16.png",
-			"48": "icons/icon48.png",
-			"128": "icons/icon128.png"
-		}
-	},
-	"options_ui": {
-		"page": "settings.html",
-		"open_in_tab": true
-	},
-	"icons": {
+	  "default_popup": "popup.html",
+	  "default_icon": {
 		"16": "icons/icon16.png",
 		"48": "icons/icon48.png",
 		"128": "icons/icon128.png"
+	  }
+	},
+	"options_ui": {
+	  "page": "settings.html",
+	  "open_in_tab": true
+	},
+	"icons": {
+	  "16": "icons/icon16.png",
+	  "48": "icons/icon48.png",
+	  "128": "icons/icon128.png"
 	},
 	"background": {
-		"scripts": ["background.js"]
+	  "scripts": ["background.js"]
 	},
 	"content_scripts": [
-		{
-			"matches": ["http://*/*", "https://*/*"],
-			"js": ["browser-polyfill.min.js", "content.js"],
-			"css": ["highlighter.css"]
-		}
+	  {
+		"matches": ["http://*/*", "https://*/*"],
+		"js": [
+		  "browser-polyfill.min.js",
+		  "content.js"
+		],
+		"css": ["highlighter.css"]
+	  }
 	],
 	"web_accessible_resources": [
-		{
-			"resources": ["reader.css", "reader-script.js", "browser-polyfill.min.js", "style.css", "side-panel.html"],
-			"extension_ids": ["*"],
-   			"matches": [ "*://*/*" ]
-		}
+	  {
+		"resources": [
+		  "reader.css",
+		  "reader-script.js",
+		  "browser-polyfill.min.js",
+		  "style.css",
+		  "side-panel.html"
+		],
+		"matches": ["*://*/*"]
+	  }
 	],
 	"content_security_policy": {
-		"extension_pages": "script-src 'self'; object-src 'self'"
+	  "extension_pages": "script-src 'self'; object-src 'self'"
 	},
 	"commands": {
-		"_execute_action": {
-			"suggested_key": {
-				"default": "Alt+Shift+O",
-				"mac": "Alt+Shift+O"
-			},
-			"description": "__MSG_commandOpenClipper__"
+	  "_execute_action": {
+		"suggested_key": {
+		  "default": "Alt+Shift+E",
+		  "mac": "Alt+Shift+E"
 		},
-		"toggle_highlighter": {
-			"suggested_key": {
-				"default": "Alt+Shift+H",
-				"mac": "Alt+Shift+H"
-			},
-			"description": "__MSG_commandToggleHighlighter__"
+		"description": "Open Ecommerce Product Scraper"
+	  },
+	  "toggle_selector": {
+		"suggested_key": {
+		  "default": "Alt+Shift+S",
+		  "mac": "Alt+Shift+S"
 		},
-		"toggle_reader": {
-			"suggested_key": {
-				"default": "Alt+Shift+R",
-				"mac": "Alt+Shift+R"
-			},
-			"description": "__MSG_commandToggleReader__"
-		}
+		"description": "Toggle product selection mode"
+	  }
 	},
 	"browser_specific_settings": {
-		"gecko": {
-			"id": "clipper@obsidian.md",
-			"strict_min_version": "113.0",
-			"data_collection_permissions": {
-				"required": ["none"]
-			}
-		},
-		"gecko_android": {
-			"strict_min_version": "113.0",
-			"data_collection_permissions": {
-				"required": ["none"]
-			}
+	  "gecko": {
+		"id": "ecommerce-product-scraper@deborahfam.com",
+		"strict_min_version": "113.0",
+		"data_collection_permissions": {
+		  "required": ["none"]
 		}
+	  },
+	  "gecko_android": {
+		"strict_min_version": "113.0",
+		"data_collection_permissions": {
+		  "required": ["none"]
+		}
+	  }
 	}
-}
+  }
+  

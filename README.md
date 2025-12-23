@@ -1,94 +1,105 @@
-Obsidian Web Clipper helps you highlight and capture the web in your favorite browser. Anything you save is stored as durable Markdown files that you can read offline, and preserve for the long term.
+# Ecommerce Product Clipper
 
-- **[Download Web Clipper](https://obsidian.md/clipper)**
-- **[Documentation](https://help.obsidian.md/web-clipper)**
-- **[Troubleshooting](https://help.obsidian.md/web-clipper/troubleshoot)**
+Ecommerce Product Clipper is a browser extension that lets you extract structured product data directly from e-commerce websites.
+
+It allows you to select products on a page and capture relevant information such as title, price, images, availability, and metadata, producing clean, structured output (JSON) that can be exported or processed further.
+
+This extension is designed for developers, analysts, and automation workflows that require reliable product extraction from real-world e-commerce pages.
 
 ## Get started
 
-Install the extension by downloading it from the official directory for your browser:
+Install the extension by loading it locally in your browser (Chrome / Chromium-based browsers).
 
-- **[Chrome Web Store](https://chromewebstore.google.com/detail/obsidian-web-clipper/cnjifjpddelmedmihgijeibhnjfabmlf)** for Chrome, Brave, Arc, Orion, and other Chromium-based browsers.
-- **[Firefox Add-Ons](https://addons.mozilla.org/en-US/firefox/addon/web-clipper-obsidian/)** for Firefox and Firefox Mobile.
-- **[Safari Extensions](https://apps.apple.com/us/app/obsidian-web-clipper/id6720708363)** for macOS, iOS, and iPadOS.
-- **[Edge Add-Ons](https://microsoftedge.microsoft.com/addons/detail/obsidian-web-clipper/eigdjhmgnaaeaonimdklocfekkaanfme)** for Microsoft Edge.
+> Public store releases may be added in the future.
+
+### Install locally (Chromium)
+
+1. Clone the repository:
+
+    ```bash
+    git clone https://github.com/deborahfam/ecom-scraper.git
+
+    ```
+
+2. Build the extension:
+
+    `npm install npm run build`
+
+3. Open your browser and navigate to `chrome://extensions`
+4. Enable **Developer mode**
+5. Click **Load unpacked** and select the `dist/` directory
 
 ## Use the extension
 
-Documentation is available on the [Obsidian Help site](https://help.obsidian.md/web-clipper), which covers how to use [highlighting](https://help.obsidian.md/web-clipper/highlight), [templates](https://help.obsidian.md/web-clipper/templates), [variables](https://help.obsidian.md/web-clipper/variables), [filters](https://help.obsidian.md/web-clipper/filters), and more.
+Once installed:
 
-## Contribute
+1. Navigate to an e-commerce product or listing page
+2. Activate the extension
+3. Select or detect product elements on the page
+4. Extract structured product data
+5. Export or consume the extracted data as needed
 
-### Translations
+The exact extraction logic may vary depending on the site structure.
 
-You can help translate Web Clipper into your language. Submit your translation via pull request using the format found in the [/_locales](/src/_locales) folder.
+## Output format
 
-### Features and bug fixes
+Extracted data is designed to be machine-friendly and typically includes:
 
-See the [help wanted](https://github.com/obsidianmd/obsidian-clipper/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22) tag for issues where contributions are welcome.
+- Product name
+- Price (raw and normalized)
+- Currency
+- Images
+- Availability
+- URL
+- Additional attributes when available
+
+The output can be easily integrated into scraping pipelines, databases, or downstream AI/ML workflows.
 
 ## Roadmap
 
 In no particular order:
 
-- [ ] A separate icon for Web Clipper
-- [ ] Translate UI into more languages — help is welcomed
-- [ ] Annotate highlights
-- [ ] Template directory
-- [ ] Template validation
-- [ ] Template logic (if/for)
-- [x] Save images locally, [added in Obsidian 1.8.0](https://obsidian.md/changelog/2024-12-18-desktop-v1.8.0/)
+- Improved product detection heuristics
+- Support for pagination and product listings
+- Export to CSV / API endpoints
+- Site-specific extraction profiles
+- Schema validation for extracted products
+- Optional AI-assisted normalization
 
 ## Developers
 
-To build the extension:
+### Build
 
-```
-npm run build
-```
+`npm run build`
 
-This will create three directories:
-- `dist/` for the Chromium version
-- `dist_firefox/` for the Firefox version
-- `dist_safari/` for the Safari version
+This creates:
 
-### Install the extension locally
+- `dist/` for Chromium-based browsers
+- `dist_firefox/` for Firefox (experimental / optional)
+- `dist_safari/` for Safari (if supported)
 
-For Chromium browsers, such as Chrome, Brave, Edge, and Arc:
+### Development workflow
 
-1. Open your browser and navigate to `chrome://extensions`
-2. Enable **Developer mode**
-3. Click **Load unpacked** and select the `dist` directory
-
-For Firefox:
-
-1. Open Firefox and navigate to `about:debugging#/runtime/this-firefox`
-2. Click **Load Temporary Add-on**
-3. Navigate to the `dist_firefox` directory and select the `manifest.json` file
-
-If you want to run the extension permanently you can do so with the Nightly or Developer versions of Firefox.
-
-1. Type `about:config` in the URL bar
-2. In the Search box type `xpinstall.signatures.required`
-3. Double-click the preference, or right-click and select "Toggle", to set it to `false`.
-4. Go to `about:addons` > gear icon > **Install Add-on From File…**
-
-For iOS Simulator testing on macOS:
-
-1. Run `npm run build` to build the extension
-2. Open `xcode/Obsidian Web Clipper/Obsidian Web Clipper.xcodeproj` in Xcode
-3. Select the **Obsidian Web Clipper (iOS)** scheme from the scheme selector
-4. Choose an iOS Simulator device and click **Run** to build and launch the app
-5. Once the app is running on the simulator, open **Safari**
-6. Navigate to a webpage and tap the **Extensions** button in Safari to access the Web Clipper extension
+- Source code lives in `src/`
+- Browser-specific builds are generated automatically
+- Keep permissions minimal and explicit in `manifest.json`
 
 ## Third-party libraries
 
-- [webextension-polyfill](https://github.com/mozilla/webextension-polyfill) for browser compatibility
-- [defuddle](https://github.com/kepano/defuddle) for content extraction
-- [turndown](https://github.com/mixmark-io/turndown) for HTML to Markdown conversion
-- [dayjs](https://github.com/iamkun/dayjs) for date parsing and formatting
-- [lz-string](https://github.com/pieroxy/lz-string) to compress templates to reduce storage space
-- [lucide](https://github.com/lucide-icons/lucide) for icons
-- [mathml-to-latex](https://github.com/asnunes/mathml-to-latex) for MathML to LaTeX conversion
-- [dompurify](https://github.com/cure53/DOMPurify) for sanitizing HTML
+This project uses several open-source libraries, including:
+
+- webextension-polyfill — browser compatibility
+- defuddle — content extraction
+- turndown — HTML to Markdown conversion
+- dayjs — date parsing and formatting
+- lz-string — template compression
+- lucide — icons
+- dompurify — HTML sanitization
+
+See `package.json` for the full dependency list.
+
+## License
+
+This project is licensed under the MIT License.
+
+Parts of this codebase are derived from the project **obsidianmd/obsidian-clipper**, originally licensed under the MIT License.
