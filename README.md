@@ -102,4 +102,8 @@ See `package.json` for the full dependency list.
 
 This project is licensed under the MIT License.
 
-Parts of this codebase are derived from the project **obsidianmd/obsidian-clipper**, originally licensed under the MIT License.
+### Attribution
+
+Parts of this codebase are derived from the project **[obsidianmd/obsidian-clipper](https://github.com/obsidianmd/obsidian-clipper)**, originally licensed under the MIT License.
+
+Copyright (c) 2024 Obsidian Publish Ltd. and contributors

@@ -8,7 +8,7 @@ body:
 - type: checkboxes
   attributes:
     label: Troubleshooting
-    description: Please review [Troubleshooting instructions](https://help.obsidian.md/web-clipper/troubleshoot) before opening an issue.
+    description: Please review troubleshooting steps before opening an issue.
     options:
       - label: I have reviewed the troubleshooting instructions
         required: true
@@ -27,15 +27,13 @@ body:
 
 ---
 
-IMPORTANT: If your issue is related to missing content on page, please review the Troubleshooting instructions and open your issue on the Defuddle repo.
-https://help.obsidian.md/web-clipper/troubleshoot
+IMPORTANT: If your issue is related to missing content on page, please review the troubleshooting instructions.
 
 **Version (please complete the following information):**
 
 - OS: [e.g. Windows]
 - Browser [e.g. Chrome, Firefox]
-- Web Clipper version: [e.g. 0.9.5]
-- Obsidian version: [e.g. 1.7.5]
+- Extension version: [e.g. 0.12.0]
 
 **Describe the bug**
 
