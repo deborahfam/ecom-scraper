@@ -6,7 +6,7 @@ import { getDomain } from './utils/string-utils';
 
 declare global {
 	interface Window {
-		obsidianHighlighterInitialized?: boolean;
+		webClipperInitialized?: boolean;
 	}
 }
 
@@ -14,16 +14,16 @@ declare global {
 // This allows the script to be re-executed without redeclaring variables
 (function() {
 	// Check if the script has already been initialized
-	if (window.hasOwnProperty('obsidianHighlighterInitialized')) {
+	if (window.hasOwnProperty('webClipperInitialized')) {
 		return;  // Exit if already initialized
 	}
 
 	// Mark as initialized
-	window.obsidianHighlighterInitialized = true;
+	window.webClipperInitialized = true;
 
 	let isHighlighterMode = false;
-	const iframeId = 'obsidian-clipper-iframe';
-	const containerId = 'obsidian-clipper-container';
+	const iframeId = 'web-clipper-iframe';
+	const containerId = 'web-clipper-container';
 
 	function removeContainer(container: HTMLElement) {
 		container.classList.add('is-closing');
@@ -58,17 +58,17 @@ declare global {
 
 		// Add resize handle (left side only)
 		const handle = document.createElement('div');
-		handle.className = `obsidian-clipper-resize-handle obsidian-clipper-resize-handle-w`;
+		handle.className = `web-clipper-resize-handle web-clipper-resize-handle-w`;
 		container.appendChild(handle);
 		addResizeListener(container, handle, 'w');
 
 		const southHandle = document.createElement('div');
-		southHandle.className = `obsidian-clipper-resize-handle obsidian-clipper-resize-handle-s`;
+		southHandle.className = `web-clipper-resize-handle web-clipper-resize-handle-s`;
 		container.appendChild(southHandle);
 		addResizeListener(container, southHandle, 's');
 
 		const southWestHandle = document.createElement('div');
-		southWestHandle.className = 'obsidian-clipper-resize-handle obsidian-clipper-resize-handle-sw';
+		southWestHandle.className = 'web-clipper-resize-handle web-clipper-resize-handle-sw';
 		container.appendChild(southWestHandle);
 		addResizeListener(container, southWestHandle, 'sw');
 
@@ -91,7 +91,7 @@ declare global {
 
 			document.body.style.cursor = window.getComputedStyle(handle).cursor;
 	
-			const iframe = container.querySelector('#obsidian-clipper-iframe');
+			const iframe = container.querySelector('#web-clipper-iframe');
 			if (iframe) iframe.classList.add('is-resizing');
 	
 			document.onmousemove = (moveEvent) => {
@@ -134,7 +134,7 @@ declare global {
 	
 			document.onmouseup = () => {
 				isResizing = false;
-				const iframe = container.querySelector('#obsidian-clipper-iframe');
+				const iframe = container.querySelector('#web-clipper-iframe');
 				if (iframe) iframe.classList.remove('is-resizing');
 				document.body.style.cursor = '';
 				
@@ -450,7 +450,7 @@ declare global {
 	window.addEventListener('beforeunload', handlePageUnload);
 
 	// Listen for custom events from the reader script
-	document.addEventListener('obsidian-reader-init', async () => {
+	document.addEventListener('web-clipper-reader-init', async () => {
 		// Find the highlighter button
 		const button = document.querySelector('[data-action="toggle-highlighter"]');
 		if (button) {

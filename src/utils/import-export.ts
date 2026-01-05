@@ -355,7 +355,7 @@ export async function exportAllSettings(): Promise<void> {
 		const content = JSON.stringify(exportData, null, 2);
 		console.log('Data stringified, length:', content.length);
 
-		const fileName = 'obsidian-web-clipper-settings.json';
+		const fileName = 'web-clipper-settings.json';
 
 		await saveFile({
 			content,

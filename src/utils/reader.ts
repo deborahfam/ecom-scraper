@@ -102,17 +102,17 @@ export class Reader {
 	private static injectSettingsBar(doc: Document) {
 		// Create settings bar
 		const settingsBar = doc.createElement('div');
-		settingsBar.className = 'obsidian-reader-settings';
+		settingsBar.className = 'web-clipper-reader-settings';
 		// Create settings controls container
 		const controlsContainer = doc.createElement('div');
-		controlsContainer.className = 'obsidian-reader-settings-controls';
+		controlsContainer.className = 'web-clipper-reader-settings-controls';
 
 		// Font size controls group
 		const fontGroup = doc.createElement('div');
-		fontGroup.className = 'obsidian-reader-settings-controls-group';
+		fontGroup.className = 'web-clipper-reader-settings-controls-group';
 
 		const decreaseFontBtn = doc.createElement('button');
-		decreaseFontBtn.className = 'obsidian-reader-settings-button';
+		decreaseFontBtn.className = 'web-clipper-reader-settings-button';
 		decreaseFontBtn.dataset.action = 'decrease-font';
 		decreaseFontBtn.appendChild(this.createSVG({
 			width: '20', height: '20', viewBox: '0 0 24 24',
@@ -121,7 +121,7 @@ export class Reader {
 		}));
 
 		const increaseFontBtn = doc.createElement('button');
-		increaseFontBtn.className = 'obsidian-reader-settings-button';
+		increaseFontBtn.className = 'web-clipper-reader-settings-button';
 		increaseFontBtn.dataset.action = 'increase-font';
 		increaseFontBtn.appendChild(this.createSVG({
 			width: '20', height: '20', viewBox: '0 0 24 24',
@@ -134,10 +134,10 @@ export class Reader {
 
 		// Width controls group
 		const widthGroup = doc.createElement('div');
-		widthGroup.className = 'obsidian-reader-settings-controls-group';
+		widthGroup.className = 'web-clipper-reader-settings-controls-group';
 
 		const decreaseWidthBtn = doc.createElement('button');
-		decreaseWidthBtn.className = 'obsidian-reader-settings-button';
+		decreaseWidthBtn.className = 'web-clipper-reader-settings-button';
 		decreaseWidthBtn.dataset.action = 'decrease-width';
 		decreaseWidthBtn.appendChild(this.createSVG({
 			width: '20', height: '20', viewBox: '0 0 24 24',
@@ -145,7 +145,7 @@ export class Reader {
 		}));
 
 		const increaseWidthBtn = doc.createElement('button');
-		increaseWidthBtn.className = 'obsidian-reader-settings-button';
+		increaseWidthBtn.className = 'web-clipper-reader-settings-button';
 		increaseWidthBtn.dataset.action = 'increase-width';
 		increaseWidthBtn.appendChild(this.createSVG({
 			width: '20', height: '20', viewBox: '0 0 24 24',
@@ -158,10 +158,10 @@ export class Reader {
 
 		// Line height controls group
 		const lineHeightGroup = doc.createElement('div');
-		lineHeightGroup.className = 'obsidian-reader-settings-controls-group';
+		lineHeightGroup.className = 'web-clipper-reader-settings-controls-group';
 
 		const decreaseLineHeightBtn = doc.createElement('button');
-		decreaseLineHeightBtn.className = 'obsidian-reader-settings-button';
+		decreaseLineHeightBtn.className = 'web-clipper-reader-settings-button';
 		decreaseLineHeightBtn.dataset.action = 'decrease-line-height';
 		decreaseLineHeightBtn.appendChild(this.createSVG({
 			width: '20', height: '20', viewBox: '0 0 24 24',
@@ -169,7 +169,7 @@ export class Reader {
 		}));
 
 		const increaseLineHeightBtn = doc.createElement('button');
-		increaseLineHeightBtn.className = 'obsidian-reader-settings-button';
+		increaseLineHeightBtn.className = 'web-clipper-reader-settings-button';
 		increaseLineHeightBtn.dataset.action = 'increase-line-height';
 		increaseLineHeightBtn.appendChild(this.createSVG({
 			width: '20', height: '20', viewBox: '0 0 24 24',
@@ -182,7 +182,7 @@ export class Reader {
 
 		// Theme select
 		const themeSelect = doc.createElement('select');
-		themeSelect.className = 'obsidian-reader-settings-select';
+		themeSelect.className = 'web-clipper-reader-settings-select';
 		themeSelect.dataset.action = 'change-theme';
 
 		const defaultThemeOption = doc.createElement('option');
@@ -198,7 +198,7 @@ export class Reader {
 
 		// Theme mode select
 		const themeModeSelect = doc.createElement('select');
-		themeModeSelect.className = 'obsidian-reader-settings-select';
+		themeModeSelect.className = 'web-clipper-reader-settings-select';
 		themeModeSelect.dataset.action = 'change-theme-mode';
 
 		const autoModeOption = doc.createElement('option');
@@ -219,10 +219,10 @@ export class Reader {
 
 		// Highlighter controls group
 		const highlighterGroup = doc.createElement('div');
-		highlighterGroup.className = 'obsidian-reader-settings-controls-group';
+		highlighterGroup.className = 'web-clipper-reader-settings-controls-group';
 
 		const highlighterBtn = doc.createElement('button');
-		highlighterBtn.className = 'obsidian-reader-settings-button';
+		highlighterBtn.className = 'web-clipper-reader-settings-button';
 		highlighterBtn.dataset.action = 'toggle-highlighter';
 		highlighterBtn.appendChild(this.createSVG({
 			width: '20', height: '20', viewBox: '0 0 24 24',
@@ -246,13 +246,13 @@ export class Reader {
 		this.settingsBar = settingsBar;
 
 		// Initialize values from settings
-		this.updateFontSize(doc, parseInt(getComputedStyle(doc.documentElement).getPropertyValue('--obsidian-reader-font-size')));
-		this.updateWidth(doc, parseInt(getComputedStyle(doc.documentElement).getPropertyValue('--obsidian-reader-line-width')));
-		this.updateLineHeight(doc, parseFloat(getComputedStyle(doc.documentElement).getPropertyValue('--obsidian-reader-line-height')));
+		this.updateFontSize(doc, parseInt(getComputedStyle(doc.documentElement).getPropertyValue('--web-clipper-reader-font-size')));
+		this.updateWidth(doc, parseInt(getComputedStyle(doc.documentElement).getPropertyValue('--web-clipper-reader-line-width')));
+		this.updateLineHeight(doc, parseFloat(getComputedStyle(doc.documentElement).getPropertyValue('--web-clipper-reader-line-height')));
 
 		settingsBar.addEventListener('click', (e) => {
 			const target = e.target as HTMLElement;
-			const button = target.closest('.obsidian-reader-settings-button') as HTMLButtonElement;
+			const button = target.closest('.web-clipper-reader-settings-button') as HTMLButtonElement;
 			if (!button) return;
 
 			const action = button.dataset.action;
@@ -261,22 +261,22 @@ export class Reader {
 
 			switch (action) {
 				case 'decrease-font':
-					this.updateFontSize(doc, parseInt(style.getPropertyValue('--obsidian-reader-font-size')) - 1);
+					this.updateFontSize(doc, parseInt(style.getPropertyValue('--web-clipper-reader-font-size')) - 1);
 					break;
 				case 'increase-font':
-					this.updateFontSize(doc, parseInt(style.getPropertyValue('--obsidian-reader-font-size')) + 1);
+					this.updateFontSize(doc, parseInt(style.getPropertyValue('--web-clipper-reader-font-size')) + 1);
 					break;
 				case 'decrease-width':
-					this.updateWidth(doc, parseInt(style.getPropertyValue('--obsidian-reader-line-width')) - 1);
+					this.updateWidth(doc, parseInt(style.getPropertyValue('--web-clipper-reader-line-width')) - 1);
 					break;
 				case 'increase-width':
-					this.updateWidth(doc, parseInt(style.getPropertyValue('--obsidian-reader-line-width')) + 1);
+					this.updateWidth(doc, parseInt(style.getPropertyValue('--web-clipper-reader-line-width')) + 1);
 					break;
 				case 'decrease-line-height':
-					this.updateLineHeight(doc, parseFloat(style.getPropertyValue('--obsidian-reader-line-height')) - 0.1);
+					this.updateLineHeight(doc, parseFloat(style.getPropertyValue('--web-clipper-reader-line-height')) - 0.1);
 					break;
 				case 'increase-line-height':
-					this.updateLineHeight(doc, parseFloat(style.getPropertyValue('--obsidian-reader-line-height')) + 0.1);
+					this.updateLineHeight(doc, parseFloat(style.getPropertyValue('--web-clipper-reader-line-height')) + 0.1);
 					break;
 			}
 		});
@@ -294,27 +294,27 @@ export class Reader {
 		});
 
 		// Notify content script to listen for highlighter button
-		document.dispatchEvent(new CustomEvent('obsidian-reader-init'));
+		document.dispatchEvent(new CustomEvent('web-clipper-reader-init'));
 		
 	}
 
 	private static updateFontSize(doc: Document, size: number) {
 		size = Math.max(12, Math.min(24, size));
-		doc.documentElement.style.setProperty('--obsidian-reader-font-size', `${size}px`);
+		doc.documentElement.style.setProperty('--web-clipper-reader-font-size', `${size}px`);
 		this.settings.fontSize = size;
 		this.saveSettings();
 	}
 
 	private static updateWidth(doc: Document, width: number) {
 		width = Math.max(30, Math.min(60, width));
-		doc.documentElement.style.setProperty('--obsidian-reader-line-width', `${width}em`);
+		doc.documentElement.style.setProperty('--web-clipper-reader-line-width', `${width}em`);
 		this.settings.maxWidth = width;
 		this.saveSettings();
 	}
 
 	private static updateLineHeight(doc: Document, height: number) {
 		height = Math.max(1.2, Math.min(2, Math.round(height * 10) / 10));
-		doc.documentElement.style.setProperty('--obsidian-reader-line-height', height.toString());
+		doc.documentElement.style.setProperty('--web-clipper-reader-line-height', height.toString());
 		this.settings.lineHeight = height;
 		this.saveSettings();
 	}
@@ -377,7 +377,7 @@ export class Reader {
 		if (!article) return null;
 
 		// Get the existing outline container
-		const outline = doc.querySelector('.obsidian-reader-outline') as HTMLElement;
+		const outline = doc.querySelector('.web-clipper-reader-outline') as HTMLElement;
 		if (!outline) return null;
 
 		// Find all headings h2-h6
@@ -434,7 +434,7 @@ export class Reader {
 			}
 
 			const item = doc.createElement('div');
-			item.className = `obsidian-reader-outline-item obsidian-reader-outline-${heading.tagName.toLowerCase()}`;
+			item.className = `web-clipper-reader-outline-item web-clipper-reader-outline-${heading.tagName.toLowerCase()}`;
 			item.setAttribute('data-depth', depth.toString());
 			item.textContent = heading.textContent;
 			
@@ -496,7 +496,7 @@ export class Reader {
 		const footnotes = article.querySelector('#footnotes');
 		if (footnotes) {
 			const item = doc.createElement('div');
-			item.className = 'obsidian-reader-outline-item';
+			item.className = 'web-clipper-reader-outline-item';
 			item.setAttribute('data-depth', '0');
 			item.textContent = 'Footnotes';
 			
@@ -808,7 +808,7 @@ export class Reader {
 	private static initializeLightbox(doc: Document) {
 		// Create lightbox container
 		this.lightbox = doc.createElement('div');
-		this.lightbox.className = 'obsidian-reader-lightbox theme-dark';
+		this.lightbox.className = 'web-clipper-reader-lightbox theme-dark';
 		this.lightbox.setAttribute('role', 'dialog');
 		this.lightbox.setAttribute('aria-modal', 'true');
 		// Create lightbox
@@ -1038,7 +1038,7 @@ export class Reader {
 			this.originalHTML = doc.documentElement.outerHTML;
 
 			// Clipper iframe container
-			const clipperIframeContainer = doc.getElementById('obsidian-clipper-container');
+			const clipperIframeContainer = doc.getElementById('web-clipper-container');
 
 			// Load saved settings
 			await this.loadSettings();
@@ -1102,7 +1102,7 @@ export class Reader {
 			// Remove stylesheet links and style tags, except reader styles
 			const styleElements = head.querySelectorAll('link[rel="stylesheet"], link[as="style"], style');
 			styleElements.forEach(el => {
-				if (el.id !== 'obsidian-reader-styles') {
+				if (el.id !== 'web-clipper-reader-styles') {
 					el.remove();
 				}
 			});
@@ -1131,18 +1131,18 @@ export class Reader {
 			
 			// Create main container
 			const readerContainer = doc.createElement('div');
-			readerContainer.className = 'obsidian-reader-container';
+			readerContainer.className = 'web-clipper-reader-container';
 			
 			// Create left sidebar
 			const leftSidebar = doc.createElement('div');
-			leftSidebar.className = 'obsidian-left-sidebar';
+			leftSidebar.className = 'web-clipper-left-sidebar';
 			const outline = doc.createElement('div');
-			outline.className = 'obsidian-reader-outline';
+			outline.className = 'web-clipper-reader-outline';
 			leftSidebar.appendChild(outline);
 			
 			// Create content area
 			const readerContent = doc.createElement('div');
-			readerContent.className = 'obsidian-reader-content';
+			readerContent.className = 'web-clipper-reader-content';
 			
 			// Create main element
 			const main = doc.createElement('main');
@@ -1208,9 +1208,9 @@ export class Reader {
 			
 			// Create footer
 			const footer = doc.createElement('div');
-			footer.className = 'obsidian-reader-footer';
+			footer.className = 'web-clipper-reader-footer';
 			const footerItems = [
-				'Obsidian Reader',
+				'Web Clipper Reader',
 				wordCount ? new Intl.NumberFormat().format(wordCount) + ' words' : '',
 				(parseTime ? 'parsed in ' + new Intl.NumberFormat().format(parseTime) + ' ms' : '')
 			].filter(Boolean);
@@ -1219,7 +1219,7 @@ export class Reader {
 			
 			// Create right sidebar
 			const rightSidebar = doc.createElement('div');
-			rightSidebar.className = 'obsidian-reader-right-sidebar';
+			rightSidebar.className = 'web-clipper-reader-right-sidebar';
 			
 			// Assemble everything
 			readerContainer.appendChild(leftSidebar);
@@ -1228,7 +1228,7 @@ export class Reader {
 			doc.body.appendChild(readerContainer);
 
 			// Add reader classes and attributes
-			doc.documentElement.classList.add('obsidian-reader-active');
+			doc.documentElement.classList.add('web-clipper-reader-active');
 			if (extractorType) {
 				doc.documentElement.setAttribute('data-reader-extractor', extractorType);
 			}
@@ -1238,9 +1238,9 @@ export class Reader {
 			this.updateThemeMode(doc, this.settings.themeMode);
 
 			// Initialize settings from local storage
-			doc.documentElement.style.setProperty('--obsidian-reader-font-size', `${this.settings.fontSize}px`);
-			doc.documentElement.style.setProperty('--obsidian-reader-line-height', this.settings.lineHeight.toString());
-			doc.documentElement.style.setProperty('--obsidian-reader-line-width', `${this.settings.maxWidth}em`);
+			doc.documentElement.style.setProperty('--web-clipper-reader-font-size', `${this.settings.fontSize}px`);
+			doc.documentElement.style.setProperty('--web-clipper-reader-line-height', this.settings.lineHeight.toString());
+			doc.documentElement.style.setProperty('--web-clipper-reader-line-width', `${this.settings.maxWidth}em`);
 
 			// Add settings bar and outline
 			this.injectSettingsBar(doc);
@@ -1307,7 +1307,7 @@ export class Reader {
 			
 			this.originalHTML = null;
 			this.settingsBar = null;
-			const outline = doc.querySelector('.obsidian-reader-outline');
+			const outline = doc.querySelector('.web-clipper-reader-outline');
 			if (outline) {
 				outline.remove();
 			}

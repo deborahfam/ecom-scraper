@@ -107,7 +107,7 @@
 										</div>
 									</div>
 									<div class="setting-item-control">
-										<a href="https://github.com/obsidianmd/obsidian-clipper/releases" id="changelog-link" data-i18n="changelog" class="btn" target="_blank">Changelog</a>
+										<a href="https://github.com/md-clipper/clipper/releases" id="changelog-link" data-i18n="changelog" class="btn" target="_blank">Changelog</a>
 									</div>
 								</div>
 								
@@ -117,14 +117,14 @@
 										<div class="setting-item-description" data-i18n="helpDescription">Learn how to use Web Clipper and get help troubleshooting.</div>
 									</div>
 									<div class="setting-item-control">
-										<a href="https://help.obsidian.md/web-clipper" id="help-open-btn" class="btn" target="_blank" data-i18n="open">Open</a>
+										<a href="#" id="help-open-btn" class="btn" target="_blank" data-i18n="open">Open</a>
 									</div>
 								</div>
 							</div>
 							<div>
-								<h3 data-i18n="vaults">Vaults</h3>
-								<div class="setting-item-description" data-i18n="vaultsDescription">By default, clipped notes are saved to the currently open vault. You can add vaults here if you want the option to save to different vaults. Vault names must exactly match the name of the Obsidian vault. Press <strong>enter</strong> to add a&nbsp;vault.</div>
-								<input type="text" id="vault-input" data-i18n="addVaultPlaceholder" placeholder="Press enter to add a vault" autocomplete="off" spellcheck="false" />
+								<h3 data-i18n="vaults">Destinations</h3>
+								<div class="setting-item-description" data-i18n="vaultsDescription">By default, clipped notes are saved to the default destination. You can add destinations here if you want the option to save to different locations. Press <strong>enter</strong> to add a destination.</div>
+								<input type="text" id="vault-input" data-i18n="addVaultPlaceholder" placeholder="Press enter to add a destination" autocomplete="off" spellcheck="false" />
 								<ul id="vault-list"></ul>
 							</div>
 							<div id="hotkeys-subsection">
@@ -139,7 +139,7 @@
 									<div class="setting-item-info">
 										<label for="beta-features-toggle" data-i18n="earlyAccessFeatures">Early access features</label>
 										<div class="setting-item-description" data-i18n="earlyAccessDescription">
-											Use features that require the latest <a href="https://help.obsidian.md/Obsidian/Early+access+versions" target="_blank">early access version</a> of Obsidian. Currently requires Obsidian 1.7.2 or later.
+											Use features that require early access versions.
 										</div>
 									</div>
 									<div class="setting-item-control">
@@ -181,7 +181,7 @@
 									<div class="setting-item-info">
 										<label for="silent-open-toggle" data-i18n="silentOpen">Save clipped note without opening&nbsp;it</label>
 										<div class="setting-item-description" data-i18n="silentOpenDescription">
-											Clipped notes will be saved but will not open as a new tab. Obsidian will still be brought to the foreground.
+											Clipped notes will be saved but will not open as a new tab.
 										</div>
 									</div>
 									<div class="setting-item-control">
@@ -194,7 +194,7 @@
 									<div class="setting-item-info">
 										<label for="legacy-mode-toggle" data-i18n="legacyMode">Legacy&nbsp;mode</label>
 										<div class="setting-item-description" data-i18n="legacyModeDescription">
-											Uses the URI clipping method compatible with Obsidian 1.6.7 or earlier. Note that the length of the content you can clip is limited by your browser and OS. Some pages may fail without any errors.
+											Uses the URI clipping method compatible with older versions. Note that the length of the content you can clip is limited by your browser and OS. Some pages may fail without any errors.
 										</div>
 									</div>
 									<div class="setting-item-control">
@@ -240,18 +240,18 @@
 						</div>
 						<form id="highlighter-settings-form">
 							<div class="setting-item mod-horizontal" style="display: none;">
-								<div class="setting-item-info">
-									<label for="highlighter-toggle" data-i18n="enableHighlighter">Enable highlighter</label>
-									<div class="setting-item-description" data-i18n="enableHighlighterDescription">
-										Highlight content on web pages that you can save to Obsidian.
+									<div class="setting-item-info">
+										<label for="highlighter-toggle" data-i18n="enableHighlighter">Enable highlighter</label>
+										<div class="setting-item-description" data-i18n="enableHighlighterDescription">
+											Highlight content on web pages that you can save.
+										</div>
+									</div>
+									<div class="setting-item-control">
+										<div class="checkbox-container">
+											<input type="checkbox" id="highlighter-toggle" />
+										</div>
 									</div>
 								</div>
-								<div class="setting-item-control">
-									<div class="checkbox-container">
-										<input type="checkbox" id="highlighter-toggle" />
-									</div>
-								</div>
-							</div>
 							<div class="setting-item mod-horizontal">
 								<div class="setting-item-info">
 									<label for="export-highlights" data-i18n="exportHighlights">Export highlights</label>
@@ -281,7 +281,7 @@
 								<div class="setting-item-info">
 									<label for="highlighter-behavior" style="font-weight: 400;" data-i18n="clipBehavior">Clip behavior</label>
 									<div class="setting-item-description" data-i18n="clipBehaviorDescription">
-										Choose how highlighted content is saved to Obsidian. Defines the <strong>{{content}}</strong> variable.
+										Choose how highlighted content is saved. Defines the <strong>{{content}}</strong> variable.
 									</div>
 								</div>
 								<div class="setting-item-control">
@@ -313,7 +313,7 @@
 									<div class="setting-item-info">
 										<label for="interpreter-toggle" data-i18n="enableInterpreter">Enable interpreter</label>
 										<div class="setting-item-description" data-i18n="enableInterpreterDescription">
-											Use natural language to extract data from pages. For example, you can use the template syntax <strong>{{"a summary of the page"}}</strong>. Requires an API key or custom model configured below. <a href="https://help.obsidian.md/web-clipper/interpreter" target="_blank">Learn more</a>.
+											Use natural language to extract data from pages. For example, you can use the template syntax <strong>{{"a summary of the page"}}</strong>. Requires an API key or custom model configured below.
 										</div>
 									</div>
 									<div class="setting-item-control">
@@ -344,7 +344,7 @@
 										<i data-lucide="alert-triangle"></i>
 									</div>
 									<div class="warning-text" data-i18n="apiKeysWarning">
-										By using an external provider you agree to their terms and privacy policy. Interpreter requests are sent directly to the provider you choose. Obsidian does not gather or store any data about your requests.
+										By using an external provider you agree to their terms and privacy policy. Interpreter requests are sent directly to the provider you choose. We do not gather or store any data about your requests.
 									</div>
 								</div>
 								<div class="provider-list-container">
@@ -385,7 +385,7 @@
 									<div class="setting-item-info">
 										<label for="import-types-btn" data-i18n="importProperties">Import properties</label>
 										<div class="setting-item-description" data-i18n="importPropertiesDescription">
-											To import your properties from Obsidian, locate the <strong>types.json</strong> file in the <strong>.obsidian</strong> folder within your vault. Note this folder is hidden by default on most operating systems.
+											To import your properties, locate the <strong>types.json</strong> file.
 										</div>
 									</div>
 									<div class="setting-item-control">
@@ -396,7 +396,7 @@
 									<div class="setting-item-info">
 										<label for="export-types-btn" data-i18n="exportProperties">Export properties</label>
 										<div class="setting-item-description" data-i18n="exportPropertiesDescription">
-											Save Web Clipper properties to a <strong>types.json</strong> file that can be imported into your Obsidian vault, or into Web Clipper on other devices.
+											Save Web Clipper properties to a <strong>types.json</strong> file that can be imported into Web Clipper on other devices.
 										</div>
 									</div>
 									<div class="setting-item-control">
@@ -501,7 +501,7 @@
 										<i data-lucide="alert-triangle"></i>
 									</div>
 									<div class="warning-text" data-i18n="behaviorWarning">
-										Adding to an existing note or daily note requires Obsidian 1.7.2 or later.
+										Adding to an existing note or daily note may require specific app support.
 									</div>
 								</div>
 								<div class="setting-item" id="note-name-format-container" style="display: none;">
@@ -515,8 +515,8 @@
 									<input type="text" id="template-path-name" placeholder="Clippings" />
 								</div>
 								<div class="setting-item">
-									<label for="template-vault" data-i18n="vault">Vault</label>
-									<div class="setting-item-description" data-i18n="vaultDescription">Select the default vault for this template. Go to general settings to add or remove vaults.</div>
+									<label for="template-vault" data-i18n="vault">Destination</label>
+									<div class="setting-item-description" data-i18n="vaultDescription">Select the default destination for this template. Go to general settings to add or remove destinations.</div>
 									<select id="template-vault">
 										<option value="" data-i18n="lastUsed">Last used</option>
 									</select>
@@ -699,7 +699,7 @@
 					<p data-i18n="feedbackDescription">How can we improve Web Clipper? Please visit our help page, where you can report bugs, suggest features, and get help with common issues.</p>
 				</div>
 				<div class="modal-button-container">
-					<a class="btn mod-cta" href="https://help.obsidian.md/web-clipper/troubleshoot" target="_blank" data-i18n="help">Help</a>
+					<a class="btn mod-cta" href="#" target="_blank" data-i18n="help">Help</a>
 					<button class="feedback-close-btn" data-i18n="close">Close</button>
 				</div>
 			</div>

@@ -1,16 +1,16 @@
 @media (max-width: 769px) {
-	.obsidian-highlighter-menu {
-		--obsidian-highlighter-menu-font-size: 15px;
-		--obsidian-highlighter-menu-padding: 4px;
-		--obsidian-highlighter-menu-height: 32px;
-		--obsidian-undo-button-display: flex;
-		--obsidian-highlighter-button-border: none;
+	.web-clipper-highlighter-menu {
+		--web-clipper-highlighter-menu-font-size: 15px;
+		--web-clipper-highlighter-menu-padding: 4px;
+		--web-clipper-highlighter-menu-height: 32px;
+		--web-clipper-undo-button-display: flex;
+		--web-clipper-highlighter-button-border: none;
 		top: auto !important;
 		bottom: 25px !important;
 	}
 }
 
-#obsidian-clipper-iframe {
+#web-clipper-iframe {
 	color-scheme: light dark;
 	flex-grow: 1;
 	border: none !important;
@@ -23,7 +23,7 @@
 	}
 }
 
-#obsidian-clipper-container {
+#web-clipper-container {
 	color-scheme: light dark;
 	position: fixed;
 	top: 12px;
@@ -35,8 +35,8 @@
 	height: calc(100% - 24px);
 	width: 350px;
 	z-index: 9999999999;
-	background-color: var(--obsidian-clipper-background-primary);
-	background-color: rgba(var(--obsidian-clipper-background-primary-rgb), var(--obsidian-clipper-background-opacity));
+	background-color: var(--web-clipper-background-primary);
+	background-color: rgba(var(--web-clipper-background-primary-rgb), var(--web-clipper-background-opacity));
 	backdrop-filter: saturate(1.5) blur(32px);
 	border-radius: 12px;
 	box-shadow: 0 0 0 1px rgba(0,0,0,0.1), 
@@ -52,7 +52,7 @@
 
 	&.is-open {
 		animation: 80ms ease 60ms 1 normal forwards running clipperOpenAnimation;
-		#obsidian-clipper-iframe {
+		#web-clipper-iframe {
 			opacity: 1;
 		}
 	}
@@ -62,21 +62,21 @@
 }
 
 :root {
-	--obsidian-clipper-background-primary: #fff;
-	--obsidian-clipper-background-primary-rgb: 255, 255, 255;
-	--obsidian-clipper-background-opacity: 0.9;
-	--obsidian-clipper-text-muted: #5c5c5c;
+	--web-clipper-background-primary: #fff;
+	--web-clipper-background-primary-rgb: 255, 255, 255;
+	--web-clipper-background-opacity: 0.9;
+	--web-clipper-text-muted: #5c5c5c;
 }
 @media (prefers-color-scheme: dark) {
 	:root {
-		--obsidian-clipper-background-primary: #1e1e1e;
-		--obsidian-clipper-background-primary-rgb: 12, 12, 12;
+		--web-clipper-background-primary: #1e1e1e;
+		--web-clipper-background-primary-rgb: 12, 12, 12;
 	}
 }
 
-.obsidian-clipper-resize-handle {
+.web-clipper-resize-handle {
 	position: absolute;
-	&.obsidian-clipper-resize-handle-w {
+	&.web-clipper-resize-handle-w {
 		top: 10px;
 		left: -5px;
 		bottom: 10px;
@@ -84,7 +84,7 @@
 		cursor: ew-resize;
 		z-index: 99999999999;
 	}
-	&.obsidian-clipper-resize-handle-s {
+	&.web-clipper-resize-handle-s {
 		position: absolute;
 		bottom: -5px;
 		left: 10px;
@@ -93,7 +93,7 @@
 		cursor: ns-resize;
 		z-index: 99999999999;
 	}
-	&.obsidian-clipper-resize-handle-sw {
+	&.web-clipper-resize-handle-sw {
 		position: absolute;
 		bottom: -5px;
 		left: -5px;
@@ -105,19 +105,19 @@
 }
 /* Hide the clip button on iPadOS because it's not supported */
 .is-ipad-os {
-	.obsidian-highlighter-menu {
-		#obsidian-clip-button {
+	.web-clipper-highlighter-menu {
+		#web-clipper-clip-button {
 			display: none;
 		}
 	}
 }
 
-body.obsidian-highlighter-active {
-	--obsidian-highlighter-menu-font-size: 13px;
-	--obsidian-highlighter-menu-padding: 4px;
-	--obsidian-highlighter-menu-height: 24px;
-	--obsidian-undo-button-display: none;
-	--obsidian-highlighter-button-border: inset rgba(255, 255, 255, 0.1) 0px 0px 0px 1px !important;
+body.web-clipper-highlighter-active {
+	--web-clipper-highlighter-menu-font-size: 13px;
+	--web-clipper-highlighter-menu-padding: 4px;
+	--web-clipper-highlighter-menu-height: 24px;
+	--web-clipper-undo-button-display: none;
+	--web-clipper-highlighter-button-border: inset rgba(255, 255, 255, 0.1) 0px 0px 0px 1px !important;
 
 	// Disable pinch zoom on mobile
 	touch-action: pan-x pan-y;
@@ -128,13 +128,13 @@ body.obsidian-highlighter-active {
 	*::selection {
 		background-color: rgba(255, 235, 0, 0.35) !important;
 	}
-	.obsidian-highlight-overlay {
+	.web-clipper-highlight-overlay {
 		cursor: pointer;
 		pointer-events: auto;
 	}
 }
 
-.obsidian-highlighter-menu {
+.web-clipper-highlighter-menu {
 	box-sizing: border-box !important;
 	cursor: default;
 	position: fixed;
@@ -144,15 +144,15 @@ body.obsidian-highlighter-active {
 	border: 1px solid #424242;
 	background: #353535;
 	color: #fff;
-	padding: var(--obsidian-highlighter-menu-padding);
-	height: calc(var(--obsidian-highlighter-menu-height) + var(--obsidian-highlighter-menu-padding) * 2);
-	border-radius: var(--obsidian-highlighter-menu-height);
+	padding: var(--web-clipper-highlighter-menu-padding);
+	height: calc(var(--web-clipper-highlighter-menu-height) + var(--web-clipper-highlighter-menu-padding) * 2);
+	border-radius: var(--web-clipper-highlighter-menu-height);
 	display: flex;
 	align-items: center;
 	gap: 4px;
 	z-index: 9999999999;
 	font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
-	font-size: var(--obsidian-highlighter-menu-font-size) !important;
+	font-size: var(--web-clipper-highlighter-menu-font-size) !important;
 	font-weight: 600 !important;
 	box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2) !important;
 	user-select: none;
@@ -166,15 +166,15 @@ body.obsidian-highlighter-active {
 		padding: 0 4px 0 8px;
 	}
 
-	button#obsidian-redo-highlights:not(.active),
-	button#obsidian-undo-highlights:not(.active) {
+	button#web-clipper-redo-highlights:not(.active),
+	button#web-clipper-undo-highlights:not(.active) {
 		background-color: transparent !important;
 		opacity: 0.5;
 		cursor: default !important;
 	}
-	button#obsidian-undo-highlights,
-	button#obsidian-redo-highlights {
-		display: var(--obsidian-undo-button-display) !important;
+	button#web-clipper-undo-highlights,
+	button#web-clipper-redo-highlights {
+		display: var(--web-clipper-undo-button-display) !important;
 	}
 
 	.highlight-count {
@@ -183,21 +183,21 @@ body.obsidian-highlighter-active {
 		padding-inline-start: 4px;
 	}
 
-	button#obsidian-clear-highlights {
+	button#web-clipper-clear-highlights {
 		padding: 0 8px 0 8px !important;
 	}
 
 	button {
 		font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Microsoft YaHei Light", sans-serif !important;
-		font-size: var(--obsidian-highlighter-menu-font-size) !important;
+		font-size: var(--web-clipper-highlighter-menu-font-size) !important;
 		appearance: none !important;
 		background-color: transparent !important;
 		color: #bebebe !important;
 		font-weight: 600 !important;
-		height: var(--obsidian-highlighter-menu-height) !important;
-		min-width: var(--obsidian-highlighter-menu-height) !important;
+		height: var(--web-clipper-highlighter-menu-height) !important;
+		min-width: var(--web-clipper-highlighter-menu-height) !important;
 		padding: 0 !important;
-		border-radius: var(--obsidian-highlighter-menu-height) !important;
+		border-radius: var(--web-clipper-highlighter-menu-height) !important;
 		border: none !important;
 		cursor: pointer !important;
 		box-shadow: none !important;
@@ -208,7 +208,7 @@ body.obsidian-highlighter-active {
 		font-variant-numeric: tabular-nums !important;
 		gap: 4px;
 		background-color: rgba(255, 255, 255, 0.1) !important;
-		box-shadow: var(--obsidian-highlighter-button-border) !important;
+		box-shadow: var(--web-clipper-highlighter-button-border) !important;
 		-webkit-font-smoothing: antialiased !important;
 		svg {
 			mix-blend-mode: normal !important;
@@ -235,7 +235,7 @@ body.obsidian-highlighter-active {
 			background-color: #895DF4 !important;
 			color: white !important;
 			padding: 0 8px !important;
-			box-shadow: var(--obsidian-highlighter-button-border) !important;
+			box-shadow: var(--web-clipper-highlighter-button-border) !important;
 			@media (hover: hover) {
 				&:hover {
 					background-color: #A68AF9 !important;
@@ -245,14 +245,14 @@ body.obsidian-highlighter-active {
 	}
 }
 
-body.obsidian-highlighter-always-show,
-body.obsidian-highlighter-active {
-	.obsidian-highlight-overlay {
+body.web-clipper-highlighter-always-show,
+body.web-clipper-highlighter-active {
+	.web-clipper-highlight-overlay {
 		display: block;
 	}
 }
 
-.obsidian-highlight-overlay {
+.web-clipper-highlight-overlay {
 	display: none;
 	position: absolute;
 	background-color: rgba(255, 235, 0, 0.35);
@@ -310,7 +310,7 @@ body.obsidian-highlighter-active {
 		pointer-events: all;
 	}
 
-	&.obsidian-highlight-overlay-dark {
+	&.web-clipper-highlight-overlay-dark {
 		mix-blend-mode: screen;
 		background-color: rgba(255, 235, 0, 0.25);
 		&.is-hovering {
@@ -330,7 +330,7 @@ body.obsidian-highlighter-active {
 	}
 }
 
-#obsidian-highlight-hover-overlay {
+#web-clipper-highlight-hover-overlay {
 	position: absolute;
 	border-radius: 4px;
 	border: 2px dashed rgb(255, 235, 0, 0.8);

@@ -382,7 +382,7 @@ const debouncedUpdateContextMenu = debounce(async (tabId: number) => {
 			contexts: browser.Menus.ContextType[];
 		}[] = [
 				{
-					id: "open-obsidian-clipper",
+					id: "open-web-clipper",
 					title: "Save this page",
 					contexts: ["page", "selection", "image", "video", "audio"]
 				},
@@ -433,7 +433,7 @@ const debouncedUpdateContextMenu = debounce(async (tabId: number) => {
 }, 100); // 100ms debounce time
 
 browser.contextMenus.onClicked.addListener(async (info, tab) => {
-	if (info.menuItemId === "open-obsidian-clipper") {
+	if (info.menuItemId === "open-web-clipper") {
 		browser.action.openPopup();
 	} else if (info.menuItemId === "enter-highlighter" && tab && tab.id) {
 		await setHighlighterMode(tab.id, true);

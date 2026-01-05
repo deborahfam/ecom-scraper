@@ -21,7 +21,7 @@
 		"message": "Save note"
 	},
 	"addVaultPlaceholder": {
-		"message": "Press enter to add a vault"
+		"message": "Press enter to add a destination"
 	},
 	"advanced": {
 		"message": "Advanced"
@@ -42,7 +42,7 @@
 		"message": "No API key"
 	},
 	"apiKeysWarning": {
-		"message": "By using an external provider you agree to their terms and privacy policy. Interpreter requests are sent directly to the provider you choose. Obsidian does not gather or store any data about your requests."
+		"message": "By using an external provider you agree to their terms and privacy policy. Interpreter requests are sent directly to the provider you choose. We do not gather or store any data about your requests."
 	},
 	"appendToDaily": {
 		"message": "Add to daily note, at the bottom"
@@ -60,7 +60,7 @@
 		"message": "Behavior"
 	},
 	"behaviorWarning": {
-		"message": "Adding to an existing note or daily note requires Obsidian 1.7.2 or later."
+		"message": "Adding to an existing note or daily note may require specific app support."
 	},
 	"byDay": {
 		"message": "Days"
@@ -70,6 +70,9 @@
 	},
 	"byWeek": {
 		"message": "Weeks"
+	},
+	"byYear": {
+		"message": "Years"
 	},
 	"cancel": {
 		"message": "Cancel"
@@ -96,7 +99,7 @@
 		"message": "Clip behavior"
 	},
 	"clipBehaviorDescription": {
-		"message": "Choose how highlighted content is saved to Obsidian. Defines the $strong_start${{content}}$strong_end$ variable.",
+		"message": "Choose how highlighted content is saved. Defines the $strong_start${{content}}$strong_end$ variable.",
 		"placeholders": {
 			"strong_end": {
 				"content": "</strong>"
@@ -110,7 +113,7 @@
 		"message": "Close"
 	},
 	"commandOpenClipper": {
-		"message": "Open Obsidian Clipper"
+		"message": "Open Web Clipper"
 	},
 	"commandQuickClip": {
 		"message": "Quick clip"
@@ -179,15 +182,7 @@
 		"message": "Duplicate"
 	},
 	"earlyAccessDescription": {
-		"message": "Use features that require the latest $link_start$early access version$link_end$ of Obsidian. Currently requires Obsidian 1.7.2 or later.",
-		"placeholders": {
-			"link_end": {
-				"content": "</a>"
-			},
-			"link_start": {
-				"content": "<a href=\"https://help.obsidian.md/Obsidian/Early+access+versions\" target=\"_blank\">"
-			}
-		}
+		"message": "Use features that require early access versions of the app."
 	},
 	"earlyAccessFeatures": {
 		"message": "Early access features"
@@ -208,20 +203,14 @@
 		"message": "Enable highlighter"
 	},
 	"enableHighlighterDescription": {
-		"message": "Highlight content on web pages that you can save to Obsidian."
+		"message": "Highlight content on web pages that you can save."
 	},
 	"enableInterpreter": {
 		"message": "Enable interpreter"
 	},
 	"enableInterpreterDescription": {
-		"message": "Use natural language to extract data from pages. For example, you can use the template syntax $strong_start${{\"a summary of the page\"}}$strong_end$. Requires an API key or custom model configured below.  $link_start$Learn more$link_end$.",
+		"message": "Use natural language to extract data from pages. For example, you can use the template syntax $strong_start${{\"a summary of the page\"}}$strong_end$. Requires an API key or custom model configured below.",
 		"placeholders": {
-			"link_end": {
-				"content": "</a>"
-			},
-			"link_start": {
-				"content": "<a href=\"https://help.obsidian.md/web-clipper/interpreter\" target=\"_blank\">"
-			},
 			"strong_end": {
 				"content": "</strong>"
 			},
@@ -255,7 +244,7 @@
 		"message": "Export properties"
 	},
 	"exportPropertiesDescription": {
-		"message": "Save Web Clipper properties to a $strong_start$types.json$strong_end$ file that can be imported into your Obsidian vault, or into Web Clipper on other devices.",
+		"message": "Save Web Clipper properties to a $strong_start$types.json$strong_end$ file that can be imported into Web Clipper on other devices.",
 		"placeholders": {
 			"strong_end": {
 				"content": "</strong>"
@@ -266,7 +255,7 @@
 		}
 	},
 	"extensionDescription": {
-		"message": "Save content from the web in a private and durable format that you can access offline. The official browser extension for Obsidian."
+		"message": "Save content from the web in a private and durable format that you can access offline."
 	},
 	"extensionName": {
 		"message": "Web Clipper"
@@ -380,18 +369,12 @@
 		"message": "Import properties"
 	},
 	"importPropertiesDescription": {
-		"message": "To import your properties from Obsidian, locate the $strong_1_start$types.json$strong_1_end$ file in the $strong_2_start$.obsidian$strong_2_end$ folder within your vault. Note this folder is hidden by default on most operating systems.",
+		"message": "To import your properties, locate the $strong_1_start$types.json$strong_1_end$ file.",
 		"placeholders": {
 			"strong_1_end": {
 				"content": "</strong>"
 			},
 			"strong_1_start": {
-				"content": "<strong>"
-			},
-			"strong_2_end": {
-				"content": "</strong>"
-			},
-			"strong_2_start": {
 				"content": "<strong>"
 			}
 		}
@@ -438,7 +421,7 @@
 		"message": "Legacy mode"
 	},
 	"legacyModeDescription": {
-		"message": "Uses the URI clipping method compatible with Obsidian 1.6.7 or earlier. Note that the length of the content you can clip is limited by your browser and OS. Some pages may fail without any errors."
+		"message": "Uses the URI clipping method compatible with older versions. Note that the length of the content you can clip is limited by your browser and OS. Some pages may fail without any errors."
 	},
 	"modelName": {
 		"message": "Display name"
@@ -498,15 +481,7 @@
 		"message": "Note name"
 	},
 	"noteNameFormatDescription": {
-		"message": "Format for the file name of the note. You can use variables like {{title}}, {{date}}, and {{published}} to pre-populate data from the page. $link_start$Learn more$link_end$.",
-		"placeholders": {
-			"link_end": {
-				"content": "</a>"
-			},
-			"link_start": {
-				"content": "<a href=\"https://help.obsidian.md/web-clipper/variables\" target=\"_blank\">"
-			}
-		}
+		"message": "Format for the file name of the note. You can use variables like {{title}}, {{date}}, and {{published}} to pre-populate data from the page."
 	},
 	"notesAboutPage": {
 		"message": "Notes about this page..."
@@ -671,7 +646,7 @@
 		"message": "Remove all properties that are not used in any template."
 	},
 	"removeVault": {
-		"message": "Remove vault"
+		"message": "Remove destination"
 	},
 	"replaceContent": {
 		"message": "Replace the page content"
@@ -761,7 +736,7 @@
 		"message": "Save clipped note without opening it"
 	},
 	"silentOpenDescription": {
-		"message": "Clipped notes will be saved but will not open as a new tab. Obsidian will still be brought to the foreground."
+		"message": "Clipped notes will be saved but will not open as a new tab."
 	},
 	"specificNoteName": {
 		"message": "Specific note name"
@@ -806,10 +781,10 @@
 		"message": "You are using the latest version."
 	},
 	"vault": {
-		"message": "Vault"
+		"message": "Destination"
 	},
 	"vaultDescription": {
-		"message": "Select the default vault for this template. Go to $link_start$general settings$link_end$ to add or remove vaults.",
+		"message": "Select the default destination for this template. Go to $link_start$general settings$link_end$ to add or remove destinations.",
 		"placeholders": {
 			"link_end": {
 				"content": "</a>"
@@ -820,10 +795,10 @@
 		}
 	},
 	"vaults": {
-		"message": "Vaults"
+		"message": "Destinations"
 	},
 	"vaultsDescription": {
-		"message": "By default, clipped notes are saved to the currently open vault. You can add vaults here if you want the option to save to different vaults. Vault names must exactly match the name of the Obsidian vault. Press $strong_start$enter$strong_end$ to add a vault.",
+		"message": "By default, clipped notes are saved to the default destination. You can add destinations here if you want the option to save to different locations. Press $strong_start$enter$strong_end$ to add a destination.",
 		"placeholders": {
 			"strong_end": {
 				"content": "</strong>"
