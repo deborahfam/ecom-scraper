@@ -1,5 +1,5 @@
 import dayjs from 'dayjs';
-import { Template, Property, PromptVariable } from '../types/types';
+import { Template, Property } from '../types/types';
 import { incrementStat, addHistoryEntry, getClipHistory } from '../utils/storage-utils';
 import { generateFrontmatter, saveNote } from '../utils/url-utils';
 import { extractPageContent, initializePageContent } from '../utils/content-extractor';
@@ -13,7 +13,6 @@ import { loadTemplates, createDefaultTemplate } from '../managers/template-manag
 import browser from '../utils/browser-polyfill';
 import { addBrowserClassToHtml, detectBrowser } from '../utils/browser-detection';
 import { createElementWithClass } from '../utils/dom-utils';
-import { initializeInterpreter, handleInterpreterUI, collectPromptVariables } from '../utils/interpreter';
 import { adjustNoteNameHeight } from '../utils/ui-utils';
 import { debugLog } from '../utils/debug';
 import { showVariables, initializeVariablesPanel, updateVariablesPanel } from '../managers/inspect-variables';
@@ -23,6 +22,7 @@ import { debounce } from '../utils/debounce';
 import { sanitizeFileName } from '../utils/string-utils';
 import { saveFile } from '../utils/file-utils';
 import { translatePage, getMessage, setupLanguageAndDirection } from '../utils/i18n';
+import { generateAndSaveParser } from '../utils/parser-generator';
 
 interface ReaderModeResponse {
 	success: boolean;
@@ -346,6 +346,50 @@ document.addEventListener('DOMContentLoaded', async function() {
 			initializeIcons(settingsButton);
 		}
 
+		const generateParserBtn = document.getElementById('generate-parser-btn');
+		if (generateParserBtn) {
+			generateParserBtn.addEventListener('click', async (e) => {
+				e.preventDefault();
+				const noteContentField = document.getElementById('note-content-field') as HTMLTextAreaElement;
+				const noteNameField = document.getElementById('note-name-field') as HTMLTextAreaElement;
+				if (noteContentField && noteNameField) {
+					try {
+						generateParserBtn.classList.add('processing');
+						await generateAndSaveParser(noteContentField.value, noteNameField.value, currentTabId);
+						alert(getMessage('generateParserSuccess'));
+					} catch (error) {
+						console.error('Failed to generate parser:', error);
+						alert(getMessage('generateParserError'));
+					} finally {
+						generateParserBtn.classList.remove('processing');
+					}
+				}
+			});
+		}
+
+		const generateCodeBtn = document.getElementById('generate-code-btn');
+		if (generateCodeBtn) {
+			generateCodeBtn.addEventListener('click', async (e) => {
+				e.preventDefault();
+				const noteContentField = document.getElementById('note-content-field') as HTMLTextAreaElement;
+				const noteNameField = document.getElementById('note-name-field') as HTMLTextAreaElement;
+				if (noteContentField && noteNameField) {
+					try {
+						generateCodeBtn.classList.add('processing');
+						generateCodeBtn.textContent = getMessage('processing');
+						await generateAndSaveParser(noteContentField.value, noteNameField.value, currentTabId);
+						alert(getMessage('generateParserSuccess'));
+					} catch (error) {
+						console.error('Failed to generate code:', error);
+						alert(getMessage('generateParserError'));
+					} finally {
+						generateCodeBtn.classList.remove('processing');
+						generateCodeBtn.textContent = getMessage('generateCode');
+					}
+				}
+			});
+		}
+
 		// Initialize the rest of the popup
 		if (currentTabId) {
 			const initialized = await initializeExtension(currentTabId);
@@ -620,25 +664,6 @@ function logError(message: string, error?: any): void {
 	showError(message);
 }
 
-async function waitForInterpreter(interpretBtn: HTMLButtonElement): Promise<void> {
-	return new Promise((resolve, reject) => {
-		const checkProcessing = () => {
-			if (!interpretBtn.classList.contains('processing')) {
-				if (interpretBtn.classList.contains('done')) {
-					resolve();
-				} else if (interpretBtn.classList.contains('error')) {
-					reject(new Error(getMessage('failedToProcessInterpreter')));
-				} else {
-					setTimeout(checkProcessing, 100);
-				}
-			} else {
-				setTimeout(checkProcessing, 100);
-			}
-		};
-		checkProcessing();
-	});
-}
-
 async function refreshFields(tabId: number, checkTemplateTriggers: boolean = true) {
 	if (templates.length === 0) {
 		console.warn('No templates available');
@@ -899,39 +924,6 @@ async function initializeTemplateFields(currentTabId: number, template: Template
 	}
 
 	if (template) {
-		if (generalSettings.interpreterEnabled) {
-			await initializeInterpreter(template, variables, currentTabId!, currentTabId ? await getTabInfo(currentTabId).then(tab => tab.url || '') : '');
-
-			// Check if there are any prompt variables
-			const promptVariables = collectPromptVariables(template);
-
-			// If auto-run is enabled and there are prompt variables, use interpreter
-			if (generalSettings.interpreterAutoRun && promptVariables.length > 0) {
-				try {
-					const interpretBtn = document.getElementById('interpret-btn') as HTMLButtonElement;
-					const modelSelect = document.getElementById('model-select') as HTMLSelectElement;
-					const selectedModelId = modelSelect?.value || generalSettings.interpreterModel;
-					const modelConfig = generalSettings.models.find(m => m.id === selectedModelId);
-					if (!modelConfig) {
-						throw new Error(`Model configuration not found for ${selectedModelId}`);
-					}
-					await handleInterpreterUI(template, variables, currentTabId!, currentTabId ? await getTabInfo(currentTabId).then(tab => tab.url || '') : '', modelConfig);
-					
-					// Ensure the button shows the completed state after auto-run
-					if (interpretBtn) {
-						interpretBtn.classList.add('done');
-						interpretBtn.disabled = true;
-					}
-				} catch (error) {
-					console.error('Error auto-processing with interpreter:', error);
-					const interpretBtn = document.getElementById('interpret-btn') as HTMLButtonElement;
-					if (interpretBtn) {
-						interpretBtn.classList.add('error');
-					}
-				}
-			}
-		}
-
 		const replacedTemplate = await getReplacedTemplate(template, variables, currentTabId!, currentTabId ? await getTabInfo(currentTabId).then(tab => tab.url || '') : '');
 		debugLog('Variables', 'Current template with replaced variables:', JSON.stringify(replacedTemplate, null, 2));
 	}
@@ -1256,7 +1248,6 @@ async function handleSaveNote(): Promise<void> {
 	const noteContentField = document.getElementById('note-content-field') as HTMLTextAreaElement;
 	const noteNameField = document.getElementById('note-name-field') as HTMLInputElement;
 	const pathField = document.getElementById('path-name-field') as HTMLInputElement;
-	const interpretBtn = document.getElementById('interpret-btn') as HTMLButtonElement;
 
 	if (!vaultDropdown || !noteContentField) {
 		showError('Some required fields are missing. Please try reloading the extension.');
@@ -1264,16 +1255,6 @@ async function handleSaveNote(): Promise<void> {
 	}
 
 	try {
-		// Handle interpreter if needed
-		if (generalSettings.interpreterEnabled && interpretBtn && collectPromptVariables(currentTemplate).length > 0) {
-			if (interpretBtn.classList.contains('processing')) {
-				await waitForInterpreter(interpretBtn);
-			} else if (!interpretBtn.classList.contains('done')) {
-				interpretBtn.click();
-				await waitForInterpreter(interpretBtn);
-			}
-		}
-
 		// Gather content
 		const properties = Array.from(document.querySelectorAll('.metadata-property input')).map(input => {
 			const inputElement = input as HTMLInputElement;

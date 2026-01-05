@@ -24,25 +24,10 @@ export interface ExtractedContent {
 
 export type FilterFunction = (value: string, param?: string) => string | any[];
 
-export interface PromptVariable {
-	key: string;
-	prompt: string;
-	filters?: string;
-}
-
 export interface PropertyType {
 	name: string;
 	type: string;
 	defaultValue?: string;
-}
-
-export interface Provider {
-	id: string;
-	name: string;
-	baseUrl: string;
-	apiKey: string;
-	apiKeyRequired?: boolean;
-	presetId?: string;
 }
 
 export interface Rating {
@@ -70,12 +55,6 @@ export interface Settings {
 	highlighterEnabled: boolean;
 	alwaysShowHighlights: boolean;
 	highlightBehavior: string;
-	interpreterModel?: string;
-	models: ModelConfig[];
-	providers: Provider[];
-	interpreterEnabled: boolean;
-	interpreterAutoRun: boolean;
-	defaultPromptContext: string;
 	propertyTypes: PropertyType[];
 	readerSettings: ReaderSettings;
 	stats: {
@@ -87,14 +66,6 @@ export interface Settings {
 	history: HistoryEntry[];
 	ratings: Rating[];
 	saveBehavior: 'saveNote' | 'saveFile' | 'copyToClipboard';
-}
-
-export interface ModelConfig {
-	id: string;
-	providerId: string;
-	providerModelId: string;
-	name: string;
-	enabled: boolean;
 }
 
 export interface HistoryEntry {

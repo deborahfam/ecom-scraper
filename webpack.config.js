@@ -6,6 +6,7 @@ const ZipPlugin = require('zip-webpack-plugin');
 const package = require('./package.json');
 const webpack = require('webpack');
 const TerserPlugin = require('terser-webpack-plugin');
+require('dotenv').config();
 
 // Remove .DS_Store files
 function removeDSStore(dir) {
@@ -164,6 +165,8 @@ module.exports = (env, argv) => {
 			},
 			new webpack.DefinePlugin({
 				'process.env.NODE_ENV': JSON.stringify(argv.mode),
+				'process.env.OPENROUTER_API_KEY': JSON.stringify(process.env.OPENROUTER_API_KEY),
+				'process.env.OPENROUTER_MODEL': JSON.stringify(process.env.OPENROUTER_MODEL),
 				'DEBUG_MODE': JSON.stringify(!isProduction)
 			}),
 			...(isProduction ? [

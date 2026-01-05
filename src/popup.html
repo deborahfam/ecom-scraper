@@ -54,22 +54,21 @@
 					</div>
 					<input id="path-name-field" type="text" data-i18n="folder"/>
 				</div>
-				<div id="interpreter" style="display: none;">
-					<textarea id="prompt-context" rows="3"></textarea>
-					<div class="interpreter-controls">
-						<select id="model-select" style="display: none;"></select>
-						<button id="interpret-btn" data-i18n="interpret"></button>
-						<span id="interpreter-timer" style="display: none;"></span>
-					</div>
-					<div id="token-counter" class="token-counter"></div>
-					<div id="interpreter-error" style="display: none;"></div>
-				</div>
+				<button id="generate-code-btn" class="mod-cta" style="width: 100%;" data-i18n="generateCode">Generate Code</button>
 				<div class="action-buttons" id="action-buttons">
 					<button id="clip-btn" class="mod-cta"><!-- Text set by determineMainAction --></button>
 					<div class="menu-btn">
 						<button id="more-btn"><i data-lucide="chevron-down"></i></button>
 						<div class="menu" id="more-dropdown">
 							<div class="secondary-actions">
+								<div class="menu-item" id="generate-parser-btn">
+									<div class="menu-item-icon">
+										<i data-lucide="code-2"></i>
+									</div>
+									<div class="menu-item-title" data-i18n="generateParser">
+										Generate Parser
+									</div>
+								</div>
 								<!-- Secondary actions will be populated by ts -->
 							</div>
 						</div>

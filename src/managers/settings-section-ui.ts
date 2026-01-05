@@ -1,9 +1,8 @@
 import { updateUrl } from '../utils/routing';
 import { generalSettings } from '../utils/storage-utils';
-import { updatePromptContextVisibility } from './interpreter-settings';
 import { initializePropertyTypesManager } from './property-types-manager';
 
-export type SettingsSection = 'general' | 'properties' | 'highlighter' | 'interpreter' | 'reader' | 'templates';
+export type SettingsSection = 'general' | 'properties' | 'highlighter' | 'reader' | 'templates';
 
 export function showSettingsSection(section: SettingsSection, templateId?: string): void {
 	const sections = document.querySelectorAll('.settings-section');
@@ -34,8 +33,6 @@ export function showSettingsSection(section: SettingsSection, templateId?: strin
 			templateEditor.style.display = 'block';
 		}
 	}
-
-	updatePromptContextVisibility();
 }
 
 function updateSidebarActiveState(activeSection: string): void {
@@ -66,9 +63,8 @@ export function initializeSidebar(): void {
 			if (target.dataset.section === 'general'
 				|| target.dataset.section === 'properties'
 				|| target.dataset.section === 'highlighter'
-				|| target.dataset.section === 'interpreter'
 				|| target.dataset.section === 'reader') {
-				showSettingsSection(target.dataset.section as 'general' | 'properties' | 'highlighter' | 'interpreter' | 'reader');
+				showSettingsSection(target.dataset.section as 'general' | 'properties' | 'highlighter' | 'reader');
 			}
 			if (settingsContainer) {
 				settingsContainer.classList.remove('sidebar-open');

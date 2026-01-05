@@ -810,5 +810,17 @@
 	},
 	"version": {
 		"message": "Version"
+	},
+	"generateParser": {
+		"message": "Generate Parser"
+	},
+	"generateParserError": {
+		"message": "Failed to generate parser. Check console."
+	},
+	"generateParserSuccess": {
+		"message": "Parser generated and saved."
+	},
+	"generateCode": {
+		"message": "Generate Code"
 	}
 }
