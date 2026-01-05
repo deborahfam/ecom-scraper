@@ -22,7 +22,8 @@ import { debounce } from '../utils/debounce';
 import { sanitizeFileName } from '../utils/string-utils';
 import { saveFile } from '../utils/file-utils';
 import { translatePage, getMessage, setupLanguageAndDirection } from '../utils/i18n';
-import { generateAndSaveParser } from '../utils/parser-generator';
+import { generateAndSaveParser, loadSavedParserCode } from '../utils/parser-generator';
+import { executeParserCode } from '../utils/code-executor';
 
 interface ReaderModeResponse {
 	success: boolean;
@@ -346,45 +347,106 @@ document.addEventListener('DOMContentLoaded', async function() {
 			initializeIcons(settingsButton);
 		}
 
-		const generateParserBtn = document.getElementById('generate-parser-btn');
-		if (generateParserBtn) {
-			generateParserBtn.addEventListener('click', async (e) => {
+		const saveJsonBtn = document.getElementById('save-json-btn') as HTMLButtonElement;
+		if (saveJsonBtn) {
+			saveJsonBtn.addEventListener('click', async (e) => {
 				e.preventDefault();
 				const noteContentField = document.getElementById('note-content-field') as HTMLTextAreaElement;
 				const noteNameField = document.getElementById('note-name-field') as HTMLTextAreaElement;
-				if (noteContentField && noteNameField) {
+				if (noteContentField && noteNameField && currentTabId) {
 					try {
-						generateParserBtn.classList.add('processing');
-						await generateAndSaveParser(noteContentField.value, noteNameField.value, currentTabId);
-						alert(getMessage('generateParserSuccess'));
+						saveJsonBtn.classList.add('processing');
+						saveJsonBtn.textContent = getMessage('processing');
+						saveJsonBtn.disabled = true;
+						
+						// Get current page URL
+						const tab = await getTabInfo(currentTabId);
+						const pageUrl = tab.url;
+						
+						// Step 1: Generate the parser code
+						debugLog('SaveJson', 'Generating parser code...');
+						const generatedCode = await generateAndSaveParser(noteContentField.value, noteNameField.value, pageUrl, currentTabId);
+						
+						// Step 2: Execute the code on the note content
+						debugLog('SaveJson', 'Executing parser code...');
+						if (!currentTabId) {
+							throw new Error('Tab ID is required to execute parser code');
+						}
+						const extractedProducts = await executeParserCode(generatedCode, noteContentField.value, currentTabId);
+						
+						// Step 3: Save the JSON result
+						debugLog('SaveJson', 'Saving JSON result...');
+						const sanitizedTitle = noteNameField.value.replace(/[\\/:*?"<>|]/g, '').trim() || 'untitled';
+						const jsonFileName = `code-generated/${sanitizedTitle}/extracted-products.json`;
+						
+						await saveFile({
+							content: JSON.stringify(extractedProducts, null, 2),
+							fileName: jsonFileName,
+							mimeType: 'application/json',
+							tabId: currentTabId
+						});
+						
+						debugLog('SaveJson', 'Process completed successfully');
 					} catch (error) {
-						console.error('Failed to generate parser:', error);
-						alert(getMessage('generateParserError'));
+						console.error('Failed to save JSON:', error);
+						alert(getMessage('saveJsonError'));
 					} finally {
-						generateParserBtn.classList.remove('processing');
+						saveJsonBtn.classList.remove('processing');
+						saveJsonBtn.textContent = getMessage('saveJson');
+						saveJsonBtn.disabled = false;
 					}
 				}
 			});
 		}
 
-		const generateCodeBtn = document.getElementById('generate-code-btn');
-		if (generateCodeBtn) {
-			generateCodeBtn.addEventListener('click', async (e) => {
+		const obtainProductsBtn = document.getElementById('obtain-products-btn') as HTMLButtonElement;
+		if (obtainProductsBtn) {
+			obtainProductsBtn.addEventListener('click', async (e) => {
 				e.preventDefault();
 				const noteContentField = document.getElementById('note-content-field') as HTMLTextAreaElement;
 				const noteNameField = document.getElementById('note-name-field') as HTMLTextAreaElement;
-				if (noteContentField && noteNameField) {
+				if (noteContentField && noteNameField && currentTabId) {
 					try {
-						generateCodeBtn.classList.add('processing');
-						generateCodeBtn.textContent = getMessage('processing');
-						await generateAndSaveParser(noteContentField.value, noteNameField.value, currentTabId);
-						alert(getMessage('generateParserSuccess'));
+						obtainProductsBtn.classList.add('processing');
+						obtainProductsBtn.textContent = getMessage('processing');
+						obtainProductsBtn.disabled = true;
+						
+						// Get current page URL
+						const tab = await getTabInfo(currentTabId);
+						const pageUrl = tab.url;
+						
+						// Step 1: Load saved parser code for this URL
+						debugLog('ObtainProducts', 'Loading saved parser code...');
+						const savedCode = await loadSavedParserCode(pageUrl);
+						
+						if (!savedCode) {
+							throw new Error('No saved parser code found for this page. Please use "Save JSON" first to generate the parser code.');
+						}
+						
+						// Step 2: Execute the saved code on the note content
+						debugLog('ObtainProducts', 'Executing saved parser code...');
+						const extractedProducts = await executeParserCode(savedCode, noteContentField.value, currentTabId);
+						
+						// Step 3: Save the JSON result
+						debugLog('ObtainProducts', 'Saving JSON result...');
+						const sanitizedTitle = noteNameField.value.replace(/[\\/:*?"<>|]/g, '').trim() || 'untitled';
+						const jsonFileName = `code-generated/${sanitizedTitle}/extracted-products.json`;
+						
+						await saveFile({
+							content: JSON.stringify(extractedProducts, null, 2),
+							fileName: jsonFileName,
+							mimeType: 'application/json',
+							tabId: currentTabId
+						});
+						
+						debugLog('ObtainProducts', 'Process completed successfully');
 					} catch (error) {
-						console.error('Failed to generate code:', error);
-						alert(getMessage('generateParserError'));
+						console.error('Failed to obtain products:', error);
+						alert(getMessage('obtainProductsError'));
 					} finally {
-						generateCodeBtn.classList.remove('processing');
-						generateCodeBtn.textContent = getMessage('generateCode');
+						obtainProductsBtn.classList.remove('processing');
+						obtainProductsBtn.textContent = getMessage('obtainProducts');
+						obtainProductsBtn.disabled = false;
 					}
 				}
 			});

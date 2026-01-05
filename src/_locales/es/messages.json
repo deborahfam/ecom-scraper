@@ -830,5 +830,20 @@
 	},
 	"generateCode": {
 		"message": "Generar Código"
+	},
+	"saveJson": {
+		"message": "Guardar JSON"
+	},
+	"saveJsonSuccess": {
+		"message": "JSON guardado exitosamente"
+	},
+	"saveJsonError": {
+		"message": "Error al guardar JSON. Revisa la consola para más detalles."
+	},
+	"obtainProducts": {
+		"message": "Obtener Productos"
+	},
+	"obtainProductsError": {
+		"message": "Error al obtener productos. Revisa la consola para más detalles."
 	}
 }

@@ -822,5 +822,20 @@
 	},
 	"generateCode": {
 		"message": "Generate Code"
+	},
+	"saveJson": {
+		"message": "Save JSON"
+	},
+	"saveJsonSuccess": {
+		"message": "JSON saved successfully"
+	},
+	"saveJsonError": {
+		"message": "Failed to save JSON. Check console for details."
+	},
+	"obtainProducts": {
+		"message": "Obtain Products"
+	},
+	"obtainProductsError": {
+		"message": "Failed to obtain products. Check console for details."
 	}
 }
