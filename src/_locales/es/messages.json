@@ -17,8 +17,8 @@
 	"addProviderTitle": {
 		"message": "Agregar proveedor"
 	},
-	"addToObsidian": {
-		"message": "Agregar a Obsidian"
+	"saveNote": {
+		"message": "Guardar nota"
 	},
 	"addVaultPlaceholder": {
 		"message": "Presiona enter para añadir una bóveda"
@@ -269,7 +269,7 @@
 		"message": "Guarda contenido web en un formato privado y duradero al que puedes acceder sin conexión. La extensión oficial para Obsidian."
 	},
 	"extensionName": {
-		"message": "Obsidian Web Clipper"
+		"message": "Web Clipper"
 	},
 	"failedToCopyText": {
 		"message": "Error al copiar el texto"

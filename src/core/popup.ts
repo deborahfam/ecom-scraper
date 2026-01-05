@@ -1,7 +1,7 @@
 import dayjs from 'dayjs';
 import { Template, Property, PromptVariable } from '../types/types';
 import { incrementStat, addHistoryEntry, getClipHistory } from '../utils/storage-utils';
-import { generateFrontmatter, saveToObsidian } from '../utils/obsidian-note-creator';
+import { generateFrontmatter, saveNote } from '../utils/url-utils';
 import { extractPageContent, initializePageContent } from '../utils/content-extractor';
 import { compileTemplate } from '../utils/template-compiler';
 import { initializeIcons, getPropertyTypeIcon } from '../icons/icons';
@@ -239,10 +239,10 @@ async function loadAndSetupTemplates() {
 function setupMessageListeners() {
 	browser.runtime.onMessage.addListener((request: any, sender: browser.Runtime.MessageSender, sendResponse: (response?: any) => void) => {
 		if (request.action === "triggerQuickClip") {
-			handleClipObsidian().then(() => {
+			handleSaveNote().then(() => {
 				sendResponse({success: true});
 			}).catch((error) => {
-				console.error('Error in handleClipObsidian:', error);
+				console.error('Error in handleSaveNote:', error);
 				sendResponse({success: false, error: error.message});
 			});
 			return true;
@@ -499,7 +499,7 @@ function setupEventListeners(tabId: number) {
 						
 						const shareData = {
 							files: [file],
-							text: 'Shared from Obsidian Web Clipper'
+							text: 'Shared from Web Clipper'
 						};
 
 						if (navigator.canShare(shareData)) {
@@ -1157,7 +1157,7 @@ export async function copyToClipboard(content: string) {
 		// Change the main button text temporarily
 		const clipButton = document.getElementById('clip-btn');
 		if (clipButton) {
-			const originalText = clipButton.textContent || getMessage('addToObsidian');
+			const originalText = clipButton.textContent || getMessage('saveNote');
 			clipButton.textContent = getMessage('copied');
 			
 			// Reset the text after 1.5 seconds
@@ -1230,26 +1230,26 @@ function determineMainAction() {
 			mainButton.textContent = getMessage('copyToClipboard');
 			mainButton.onclick = () => copyContent();
 			// Add direct actions to secondary
-			addSecondaryAction(secondaryActions, 'addToObsidian', () => handleClipObsidian());
+			addSecondaryAction(secondaryActions, 'saveNote', () => handleSaveNote());
 			addSecondaryAction(secondaryActions, 'saveFile', handleSaveToDownloads);
 			break;
 		case 'saveFile':
 			mainButton.textContent = getMessage('saveFile');
 			mainButton.onclick = () => handleSaveToDownloads();
 			// Add direct actions to secondary
-			addSecondaryAction(secondaryActions, 'addToObsidian', () => handleClipObsidian());
+			addSecondaryAction(secondaryActions, 'saveNote', () => handleSaveNote());
 			addSecondaryAction(secondaryActions, 'copyToClipboard', copyContent);
 			break;
-		default: // 'addToObsidian'
-			mainButton.textContent = getMessage('addToObsidian');
-			mainButton.onclick = () => handleClipObsidian();
+		default: // 'saveNote'
+			mainButton.textContent = getMessage('saveNote');
+			mainButton.onclick = () => handleSaveNote();
 			// Add direct actions to secondary
 			addSecondaryAction(secondaryActions, 'copyToClipboard', copyContent);
 			addSecondaryAction(secondaryActions, 'saveFile', handleSaveToDownloads);
 	}
 }
 
-async function handleClipObsidian(): Promise<void> {
+async function handleSaveNote(): Promise<void> {
 	if (!currentTemplate) return;
 
 	const vaultDropdown = document.getElementById('vault-select') as HTMLSelectElement;
@@ -1287,15 +1287,15 @@ async function handleClipObsidian(): Promise<void> {
 		const frontmatter = await generateFrontmatter(properties);
 		const fileContent = frontmatter + noteContentField.value;
 
-		// Save to Obsidian
+		// Save Note
 		const selectedVault = currentTemplate.vault || vaultDropdown.value;
 		const isDailyNote = currentTemplate.behavior === 'append-daily' || currentTemplate.behavior === 'prepend-daily';
 		const noteName = isDailyNote ? '' : noteNameField?.value || '';
 		const path = isDailyNote ? '' : pathField?.value || '';
 
-		await saveToObsidian(fileContent, noteName, path, selectedVault, currentTemplate.behavior);
+		await saveNote(fileContent, noteName, path, currentTemplate.behavior, currentTabId);
 		const tabInfo = await getCurrentTabInfo();
-		await incrementStat('addToObsidian', selectedVault, path, tabInfo.url, tabInfo.title);
+		await incrementStat('saveNote', selectedVault, path, tabInfo.url, tabInfo.title);
 
 		if (!currentTemplate.vault) {
 			lastSelectedVault = selectedVault;
@@ -1306,7 +1306,7 @@ async function handleClipObsidian(): Promise<void> {
 			setTimeout(() => window.close(), 500);
 		}
 	} catch (error) {
-		console.error('Error in handleClipObsidian:', error);
+		console.error('Error in handleSaveNote:', error);
 		showError('failedToSaveFile');
 		throw error;
 	}
@@ -1343,7 +1343,7 @@ function getActionIcon(actionType: string): string {
 	switch (actionType) {
 		case 'copyToClipboard': return 'copy';
 		case 'saveFile': return 'file-down';
-		case 'addToObsidian': return 'pen-line';
+		case 'saveNote': return 'pen-line';
 		default: return 'plus';
 	}
 }

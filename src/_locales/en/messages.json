@@ -17,8 +17,8 @@
 	"addProviderTitle": {
 		"message": "Add provider"
 	},
-	"addToObsidian": {
-		"message": "Add to Obsidian"
+	"saveNote": {
+		"message": "Save note"
 	},
 	"addVaultPlaceholder": {
 		"message": "Press enter to add a vault"
@@ -269,7 +269,7 @@
 		"message": "Save content from the web in a private and durable format that you can access offline. The official browser extension for Obsidian."
 	},
 	"extensionName": {
-		"message": "Obsidian Web Clipper"
+		"message": "Web Clipper"
 	},
 	"failedToCopyText": {
 		"message": "Failed to copy text"
