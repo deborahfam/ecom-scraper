@@ -101,6 +101,35 @@ function sanitizeJsonString(jsonString: string): string {
 	return jsonString.substring(0, quoteStart + 1) + escaped + jsonString.substring(quoteEnd);
 }
 
+/**
+ * Checks if a saved URL is a prefix of the current URL (for subpage matching)
+ * @param savedUrl - The URL that was saved
+ * @param currentUrl - The current page URL
+ * @returns true if savedUrl is a prefix of currentUrl
+ */
+function isUrlPrefix(savedUrl: string, currentUrl: string): boolean {
+	try {
+		const savedUrlObj = new URL(savedUrl);
+		const currentUrlObj = new URL(currentUrl);
+		
+		// Must match protocol and hostname
+		if (savedUrlObj.protocol !== currentUrlObj.protocol || 
+		    savedUrlObj.hostname !== currentUrlObj.hostname) {
+			return false;
+		}
+		
+		// Check if saved pathname is a prefix of current pathname
+		const savedPath = savedUrlObj.pathname.replace(/\/$/, ''); // Remove trailing slash
+		const currentPath = currentUrlObj.pathname;
+		
+		// Exact match or saved path is a prefix of current path
+		return currentPath === savedPath || currentPath.startsWith(savedPath + '/');
+	} catch {
+		// Fallback: simple string prefix check
+		return currentUrl.startsWith(savedUrl);
+	}
+}
+
 const PARSER_SYSTEM_PROMPT = `You are an expert e-commerce data extraction engineer. 
 Your task is to generate a standalone JavaScript function named 'extractProducts' that parses a given string of text (HTML or Markdown) and returns a list of product objects.
 
@@ -238,6 +267,34 @@ export async function generateAndSaveParser(sampleText: string, pageTitle: strin
 		const sanitizedTitle = pageTitle.replace(/[\\/:*?"<>|]/g, '').trim() || 'untitled';
 		const fileName = `code-generated/${sanitizedTitle}/generated-product-parser.js`;
 		
+		// Before saving, remove any existing parser entries that are related to this URL
+		// (either the saved URL is a prefix of current URL, or current URL is a prefix of saved URL)
+		try {
+			const allStorage = await browser.storage.local.get(null);
+			const keysToRemove: string[] = [];
+			
+			for (const [key, value] of Object.entries(allStorage)) {
+				if (key.startsWith('parser_code_')) {
+					const data = value as SavedParserCode;
+					if (data && data.url) {
+						// Check if URLs are related (one is prefix of the other)
+						if (isUrlPrefix(data.url, pageUrl) || isUrlPrefix(pageUrl, data.url)) {
+							keysToRemove.push(key);
+							debugLog('ParserGenerator', `Removing existing parser entry: ${key} (URL: ${data.url})`);
+						}
+					}
+				}
+			}
+			
+			if (keysToRemove.length > 0) {
+				await browser.storage.local.remove(keysToRemove);
+				debugLog('ParserGenerator', `Removed ${keysToRemove.length} existing parser entry/entries`);
+			}
+		} catch (error) {
+			console.warn('Error removing existing parser entries:', error);
+			// Continue with save even if removal fails
+		}
+		
 		// Save to file
 		await saveFile({
 			content: parsedResponse.code,
@@ -280,18 +337,46 @@ export async function generateAndSaveParser(sampleText: string, pageTitle: strin
 
 /**
  * Loads saved parser code for a given URL
+ * First tries exact match, then tries prefix matching for subpages
  * @param pageUrl - The URL of the page
  * @returns The saved parser code or null if not found
  */
 export async function loadSavedParserCode(pageUrl: string): Promise<string | null> {
 	try {
+		// First, try exact match
 		const storageKey = `parser_code_${normalizeUrlForStorage(pageUrl)}`;
 		const result = await browser.storage.local.get(storageKey);
 		
 		const savedData = result[storageKey] as SavedParserCode | undefined;
 		if (savedData && savedData.code) {
-			debugLog('ParserGenerator', `Found saved parser code for URL: ${pageUrl}`);
+			debugLog('ParserGenerator', `Found saved parser code (exact match) for URL: ${pageUrl}`);
 			return savedData.code;
+		}
+		
+		// If no exact match, try prefix matching for subpages
+		debugLog('ParserGenerator', `No exact match found, searching for prefix matches...`);
+		const allStorage = await browser.storage.local.get(null);
+		
+		// Find all parser code entries
+		const parserEntries: Array<{ key: string; data: SavedParserCode }> = [];
+		for (const [key, value] of Object.entries(allStorage)) {
+			if (key.startsWith('parser_code_')) {
+				const data = value as SavedParserCode;
+				if (data && data.url && data.code) {
+					parserEntries.push({ key, data });
+				}
+			}
+		}
+		
+		// Sort by URL length (longer paths first) to prefer more specific matches
+		parserEntries.sort((a, b) => b.data.url.length - a.data.url.length);
+		
+		// Find the first entry where the saved URL is a prefix of the current URL
+		for (const entry of parserEntries) {
+			if (isUrlPrefix(entry.data.url, pageUrl)) {
+				debugLog('ParserGenerator', `Found saved parser code (prefix match) for URL: ${pageUrl} (matched with: ${entry.data.url})`);
+				return entry.data.code;
+			}
 		}
 		
 		debugLog('ParserGenerator', `No saved parser code found for URL: ${pageUrl}`);
