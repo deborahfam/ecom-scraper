@@ -1,7 +1,7 @@
 {
 	"manifest_version": 3,
 	"default_locale": "en",
-	"name": "Ecommerce Product Scraper",
+	"name": "Smart Harvester",
 	"homepage_url": "https://github.com/deborahfam/ecom-scraper",
 	"version": "0.1.0",
 	"description": "Extract structured product data from e-commerce websites. Capture product names, prices, images, and metadata directly from web pages.",
@@ -67,7 +67,7 @@
 		  "default": "Ctrl+Shift+E",
 		  "mac": "Command+Shift+E"
 		},
-		"description": "Open Ecommerce Product Scraper"
+		"description": "Open Smart Harvester"
 	  },
 	  "quick_extract": {
 		"suggested_key": {

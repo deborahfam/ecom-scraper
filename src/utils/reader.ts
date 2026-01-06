@@ -1210,7 +1210,7 @@ export class Reader {
 			const footer = doc.createElement('div');
 			footer.className = 'web-clipper-reader-footer';
 			const footerItems = [
-				'Web Clipper Reader',
+				'Smart Harvester Reader',
 				wordCount ? new Intl.NumberFormat().format(wordCount) + ' words' : '',
 				(parseTime ? 'parsed in ' + new Intl.NumberFormat().format(parseTime) + ' ms' : '')
 			].filter(Boolean);

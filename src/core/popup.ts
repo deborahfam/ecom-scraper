@@ -1278,7 +1278,7 @@ function setupEventListeners(tabId: number) {
 						
 						const shareData = {
 							files: [file],
-							text: 'Shared from Web Clipper'
+							text: 'Shared from Smart Harvester'
 						};
 
 						if (navigator.canShare(shareData)) {

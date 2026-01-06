@@ -113,7 +113,7 @@
 		"message": "Close"
 	},
 	"commandOpenClipper": {
-		"message": "Open Web Clipper"
+		"message": "Open Smart Harvester"
 	},
 	"commandQuickClip": {
 		"message": "Quick clip"
@@ -244,7 +244,7 @@
 		"message": "Export properties"
 	},
 	"exportPropertiesDescription": {
-		"message": "Save Web Clipper properties to a $strong_start$types.json$strong_end$ file that can be imported into Web Clipper on other devices.",
+		"message": "Save Smart Harvester properties to a $strong_start$types.json$strong_end$ file that can be imported into Smart Harvester on other devices.",
 		"placeholders": {
 			"strong_end": {
 				"content": "</strong>"
@@ -258,7 +258,7 @@
 		"message": "Save content from the web in a private and durable format that you can access offline."
 	},
 	"extensionName": {
-		"message": "Web Clipper"
+		"message": "Smart Harvester"
 	},
 	"failedToCopyText": {
 		"message": "Failed to copy text"
@@ -309,7 +309,7 @@
 		"message": "Feedback"
 	},
 	"feedbackDescription": {
-		"message": "How can we improve Web Clipper? Please visit our help page, where you can report bugs, suggest features, and get help with common issues."
+		"message": "How can we improve Smart Harvester? Please visit our help page, where you can report bugs, suggest features, and get help with common issues."
 	},
 	"feedbackTitle": {
 		"message": "Thanks for your feedback"
@@ -330,7 +330,7 @@
 		"message": "Help"
 	},
 	"helpDescription": {
-		"message": "Learn how to use Web Clipper and get help troubleshooting."
+		"message": "Learn how to use Smart Harvester and get help troubleshooting."
 	},
 	"highlightInline": {
 		"message": "Highlight the page content"
@@ -493,7 +493,7 @@
 		"message": "Open"
 	},
 	"openBehaviorDescription": {
-		"message": "Choose how Web Clipper opens by default."
+		"message": "Choose how Smart Harvester opens by default."
 	},
 	"openBehaviorTitle": {
 		"message": "Open behavior"
@@ -622,7 +622,7 @@
 		"message": "Providers"
 	},
 	"rateExtensionDescription": {
-		"message": "Are you enjoying Web Clipper? Help us by giving it a rating."
+		"message": "Are you enjoying Smart Harvester? Help us by giving it a rating."
 	},
 	"reader": {
 		"message": "Reader"

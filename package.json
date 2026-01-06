@@ -1,7 +1,7 @@
 {
 	"name": "ecom-scraper",
 	"version": "0.12.0",
-	"description": "Ecommerce Product Scraper - Browser extension for extracting structured product data from e-commerce websites.",
+	"description": "Smart Harvester - Browser extension for extracting structured product data from e-commerce websites.",
 	"scripts": {
 		"defuddle-dev": "node scripts/set-defuddle-dev.js",
 		"defuddle-prod": "node scripts/set-defuddle-prod.js",

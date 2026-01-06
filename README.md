@@ -1,6 +1,6 @@
-# Ecommerce Product Clipper
+# Smart Harvester
 
-Ecommerce Product Clipper is a browser extension that lets you extract structured product data directly from e-commerce websites.
+Smart Harvester is a browser extension that lets you extract structured product data directly from e-commerce websites.
 
 It allows you to select products on a page and capture relevant information such as title, price, images, availability, and metadata, producing clean, structured output (JSON) that can be exported or processed further.
 
