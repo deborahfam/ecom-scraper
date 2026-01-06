@@ -351,10 +351,16 @@ document.addEventListener('DOMContentLoaded', async function() {
 				const noteContentField = document.getElementById('note-content-field') as HTMLTextAreaElement;
 				const noteNameField = document.getElementById('note-name-field') as HTMLTextAreaElement;
 				if (noteContentField && noteNameField && currentTabId) {
+					const obtainProductsBtn = document.getElementById('obtain-products-btn') as HTMLButtonElement;
 					try {
 						saveJsonBtn.classList.add('processing');
 						saveJsonBtn.textContent = getMessage('processing');
 						saveJsonBtn.disabled = true;
+						
+						// Also disable the obtain products button
+						if (obtainProductsBtn) {
+							obtainProductsBtn.disabled = true;
+						}
 						
 						// Get current page URL
 						const tab = await getTabInfo(currentTabId);
@@ -391,6 +397,11 @@ document.addEventListener('DOMContentLoaded', async function() {
 						saveJsonBtn.classList.remove('processing');
 						saveJsonBtn.textContent = getMessage('generateCodeAndSave');
 						saveJsonBtn.disabled = false;
+						
+						// Re-enable the obtain products button
+						if (obtainProductsBtn) {
+							obtainProductsBtn.disabled = false;
+						}
 					}
 				}
 			});
@@ -403,10 +414,16 @@ document.addEventListener('DOMContentLoaded', async function() {
 				const noteContentField = document.getElementById('note-content-field') as HTMLTextAreaElement;
 				const noteNameField = document.getElementById('note-name-field') as HTMLTextAreaElement;
 				if (noteContentField && noteNameField && currentTabId) {
+					const saveJsonBtn = document.getElementById('save-json-btn') as HTMLButtonElement;
 					try {
 						obtainProductsBtn.classList.add('processing');
 						obtainProductsBtn.textContent = getMessage('processing');
 						obtainProductsBtn.disabled = true;
+						
+						// Also disable the save JSON button
+						if (saveJsonBtn) {
+							saveJsonBtn.disabled = true;
+						}
 						
 						// Get current page URL
 						const tab = await getTabInfo(currentTabId);
@@ -444,6 +461,11 @@ document.addEventListener('DOMContentLoaded', async function() {
 						obtainProductsBtn.classList.remove('processing');
 						obtainProductsBtn.textContent = getMessage('obtainProducts');
 						obtainProductsBtn.disabled = false;
+						
+						// Re-enable the save JSON button
+						if (saveJsonBtn) {
+							saveJsonBtn.disabled = false;
+						}
 					}
 				}
 			});
