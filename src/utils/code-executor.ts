@@ -5,7 +5,7 @@ import { debugLog } from './debug';
  * Executes JavaScript code in the page context using browser.scripting.executeScript
  * This avoids CSP restrictions by executing in the page context rather than extension context
  * @param code - The JavaScript code to execute
- * @param inputText - The text/markdown to parse
+ * @param inputText - The HTML string to parse
  * @param tabId - The tab ID where to execute the code
  * @returns The result of executing the code (should be an array of products)
  */

@@ -132,7 +132,7 @@ function isUrlPrefix(savedUrl: string, currentUrl: string): boolean {
 }
 
 const PARSER_SYSTEM_PROMPT = `You are an expert e-commerce data extraction engineer. 
-Your task is to generate a standalone JavaScript function named 'extractProducts' that parses a given string of text (HTML or Markdown) and returns a list of product objects.
+Your task is to generate a standalone JavaScript function named 'extractProducts' that parses a given HTML string and returns a list of product objects.
 
 The 'Product' object structure MUST be:
 {
@@ -146,12 +146,29 @@ The 'Product' object structure MUST be:
   "attributes": Record<string, any> | {}
 }
 
+Example of a product object:
+{
+  "name": "Product Name",
+  "priceRaw": "100",
+  "priceNormalized": 100,
+  "currency": "USD",
+  "images": ["https://example.com/image1.jpg", "https://example.com/image2.jpg"],
+  "availability": "In Stock",
+  "url": "https://example.com/product1",
+  "attributes": {
+    "color": "Red",
+    "size": "M"
+  }
+}
+
 Requirements for the generated code:
-1. The function 'extractProducts(text)' must be self-contained.
-2. It should handle common e-commerce patterns (JSON-LD, Meta tags, or generic DOM structures represented in text).
-3. If a property is not found, it MUST be null (or [] for images, {} for attributes).
-4. The output must be a valid JavaScript array of these objects.
-5. Return ONLY the executable JavaScript code. No explanations, no markdown formatting, no backticks.
+1. The function 'extractProducts(htmlString)' must be self-contained and accept an HTML string.
+2. You should parse the HTML string using DOMParser or similar methods to extract product data.
+3. It should handle common e-commerce patterns (JSON-LD, Meta tags, CSS selectors, or generic DOM structures).
+4. Use CSS selectors, data attributes, class names, and other HTML structure patterns to identify products.
+5. If a property is not found, it MUST be null (or [] for images, {} for attributes).
+6. The output must be a valid JavaScript array of these objects.
+7. Return ONLY the executable JavaScript code. No explanations, no markdown formatting, no backticks.
 
 CRITICAL: You MUST respond with a valid JSON object in this exact format:
 {
@@ -206,10 +223,11 @@ ${previousCode}
 \`\`\`
 
 Please analyze why the previous code failed and generate an improved version. Consider:
-1. The parsing strategy might need to be different
-2. The selectors or extraction methods might be incorrect
-3. The HTML structure might require a different approach
-4. You might need to handle edge cases or different data formats
+1. The parsing strategy might need to be different - remember you're parsing HTML strings, not markdown
+2. The CSS selectors or DOM extraction methods might be incorrect
+3. The HTML structure might require a different approach (use DOMParser to parse the HTML string)
+4. You might need to handle edge cases or different HTML structures
+5. Make sure you're using proper HTML parsing methods (DOMParser, querySelector, etc.)
 
 Original task:
 ${originalPrompt}
@@ -321,10 +339,10 @@ async function generateParserCode(messages: OpenRouterMessage[]): Promise<{ expl
 	return parseLLMResponse(response);
 }
 
-export async function generateAndSaveParser(sampleText: string, pageTitle: string, pageUrl: string, tabId?: number): Promise<string> {
+export async function generateAndSaveParser(sampleHtml: string, pageTitle: string, pageUrl: string, tabId?: number): Promise<string> {
 	debugLog('ParserGenerator', 'Starting parser generation with reflection...');
 	
-	const originalUserMessage = `Analyze this e-commerce text and generate the 'extractProducts' function:\n\n${sampleText}`;
+	const originalUserMessage = `Analyze this e-commerce HTML and generate the 'extractProducts' function that parses HTML strings:\n\n${sampleHtml}`;
 	const MAX_ITERATIONS = 5;
 	let lastCode: string | null = null;
 	let lastError: string | null = null;
@@ -392,7 +410,7 @@ export async function generateAndSaveParser(sampleText: string, pageTitle: strin
 			if (tabId) {
 				debugLog('ParserGenerator', `Iteration ${iteration}: Executing code to validate...`);
 				try {
-					const extractedProducts = await executeParserCode(parsedResponse.code, sampleText, tabId);
+					const extractedProducts = await executeParserCode(parsedResponse.code, sampleHtml, tabId);
 					const validation = validateExtractedProducts(extractedProducts);
 					
 					if (validation.isValid) {

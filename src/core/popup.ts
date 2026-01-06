@@ -348,16 +348,25 @@ document.addEventListener('DOMContentLoaded', async function() {
 						const tab = await getTabInfo(currentTabId);
 						const pageUrl = tab.url;
 						
-						// Step 1: Generate the parser code
-						debugLog('SaveJson', 'Generating parser code...');
-						const generatedCode = await generateAndSaveParser(noteContentField.value, noteNameField.value, pageUrl, currentTabId);
+						// Extract HTML content from the page
+						debugLog('SaveJson', 'Extracting HTML content from page...');
+						const contentResponse = await extractPageContent(currentTabId);
+						if (!contentResponse || !contentResponse.fullHtml) {
+							throw new Error('Failed to extract HTML content from page');
+						}
+						// Use selectedHtml if available (user selection), otherwise use fullHtml
+						const pageHtml = contentResponse.selectedHtml || contentResponse.fullHtml;
 						
-						// Step 2: Execute the code on the note content
-						debugLog('SaveJson', 'Executing parser code...');
+						// Step 1: Generate the parser code using HTML
+						debugLog('SaveJson', 'Generating parser code from HTML...');
+						const generatedCode = await generateAndSaveParser(pageHtml, noteNameField.value, pageUrl, currentTabId);
+						
+						// Step 2: Execute the code on the HTML content
+						debugLog('SaveJson', 'Executing parser code on HTML...');
 						if (!currentTabId) {
 							throw new Error('Tab ID is required to execute parser code');
 						}
-						const extractedProducts = await executeParserCode(generatedCode, noteContentField.value, currentTabId);
+						const extractedProducts = await executeParserCode(generatedCode, pageHtml, currentTabId);
 						
 						// Step 3: Save the JSON result
 						debugLog('SaveJson', 'Saving JSON result...');
@@ -437,6 +446,15 @@ document.addEventListener('DOMContentLoaded', async function() {
 							const tab = await getTabInfo(currentTabId);
 							const pageUrl = tab.url;
 							
+							// Extract HTML content from the page
+							debugLog('ObtainProducts', 'Extracting HTML content from page...');
+							const contentResponse = await extractPageContent(currentTabId);
+							if (!contentResponse || !contentResponse.fullHtml) {
+								throw new Error('Failed to extract HTML content from page');
+							}
+							// Use selectedHtml if available (user selection), otherwise use fullHtml
+							const pageHtml = contentResponse.selectedHtml || contentResponse.fullHtml;
+							
 							// Step 1: Load saved parser code for this URL
 							debugLog('ObtainProducts', 'Loading saved parser code...');
 							const savedCode = await loadSavedParserCode(pageUrl);
@@ -445,9 +463,9 @@ document.addEventListener('DOMContentLoaded', async function() {
 								throw new Error('No saved parser code found for this page. Please use "Save JSON" first to generate the parser code.');
 							}
 							
-							// Step 2: Execute the saved code on the note content
-							debugLog('ObtainProducts', 'Executing saved parser code...');
-							const extractedProducts = await executeParserCode(savedCode, noteContentField.value, currentTabId);
+							// Step 2: Execute the saved code on the HTML content
+							debugLog('ObtainProducts', 'Executing saved parser code on HTML...');
+							const extractedProducts = await executeParserCode(savedCode, pageHtml, currentTabId);
 							
 							// Step 3: Save the result in the selected format
 							debugLog('ObtainProducts', `Saving ${format.toUpperCase()} result...`);
@@ -693,8 +711,161 @@ document.addEventListener('DOMContentLoaded', async function() {
 		}
 
 		/**
+		 * Navigates to a URL, extracts HTML, and returns the HTML
+		 * This is the complete flow: navigate -> get HTML -> apply scraper
+		 */
+		async function navigateAndExtractHtml(tabId: number, url: string): Promise<string> {
+			return new Promise((resolve, reject) => {
+				let timeoutId: number | null = null;
+				let resolved = false;
+				const normalizedTargetUrl = normalizeUrlForComparison(url);
+				
+				debugLog('NavigateAndExtractHtml', `Navigating to: ${url}`);
+				
+				// Set a timeout to prevent infinite waiting
+				const maxWaitTime = 30000; // 30 seconds max
+				timeoutId = window.setTimeout(() => {
+					if (!resolved) {
+						resolved = true;
+						browser.tabs.onUpdated.removeListener(onUpdatedListener);
+						reject(new Error(`Timeout waiting for page to load: ${url}`));
+					}
+				}, maxWaitTime);
+				
+				// Wait for the page to load using tabs.onUpdated listener approach
+				const onUpdatedListener = async (updatedTabId: number, changeInfo: browser.Tabs.OnUpdatedChangeInfoType, updatedTab: browser.Tabs.Tab | undefined) => {
+					if (updatedTabId !== tabId) return;
+					
+					// Check if page is loading
+					if (changeInfo.status === 'loading') {
+						debugLog('NavigateAndExtractHtml', `Page ${updatedTabId} is loading...`);
+						return;
+					}
+					
+					// Check if page is complete
+					if (changeInfo.status === 'complete' && updatedTab) {
+						const currentUrl = updatedTab.url || '';
+						const normalizedCurrentUrl = normalizeUrlForComparison(currentUrl);
+						
+						debugLog('NavigateAndExtractHtml', `Page ${updatedTabId} complete. Current URL: ${currentUrl}, Target: ${url}`);
+						
+						// Check if URLs match (allowing for slight differences)
+						if (normalizedCurrentUrl === normalizedTargetUrl || currentUrl.includes(url.split('?')[0])) {
+							// Remove the listener
+							browser.tabs.onUpdated.removeListener(onUpdatedListener);
+							
+							if (resolved) return;
+							resolved = true;
+							
+							if (timeoutId) {
+								clearTimeout(timeoutId);
+							}
+							
+							debugLog('NavigateAndExtractHtml', 'URLs match, waiting for content script...');
+							
+							// Wait a bit more for content script and DOM to be ready
+							setTimeout(async () => {
+								try {
+									// Ensure content script is loaded - try multiple times
+									let contentScriptReady = false;
+									for (let attempt = 0; attempt < 5; attempt++) {
+										try {
+											await browser.runtime.sendMessage({ 
+												action: "sendMessageToTab", 
+												tabId: tabId, 
+												message: { action: "ping" }
+											});
+											contentScriptReady = true;
+											debugLog('NavigateAndExtractHtml', `Content script ready (attempt ${attempt + 1})`);
+											break;
+										} catch (pingError) {
+											debugLog('NavigateAndExtractHtml', `Content script ping failed (attempt ${attempt + 1}), injecting...`);
+											try {
+												await browser.scripting.executeScript({
+													target: { tabId: tabId },
+													files: ['content.js']
+												});
+												// Wait after injection
+												await new Promise(resolve => setTimeout(resolve, 1500));
+											} catch (injectError) {
+												console.warn('Content script injection failed:', injectError);
+											}
+										}
+									}
+									
+									if (!contentScriptReady) {
+										debugLog('NavigateAndExtractHtml', 'Content script not ready after attempts, trying to extract anyway...');
+									}
+									
+									// Extract page content (HTML) - try multiple times
+									let contentResponse = null;
+									for (let attempt = 0; attempt < 3; attempt++) {
+										try {
+											contentResponse = await extractPageContent(tabId);
+											if (contentResponse && (contentResponse.fullHtml || contentResponse.selectedHtml)) {
+												debugLog('NavigateAndExtractHtml', `HTML extracted successfully (attempt ${attempt + 1})`);
+												break;
+											}
+										} catch (extractError) {
+											console.warn(`Content extraction attempt ${attempt + 1} failed:`, extractError);
+											if (attempt < 2) {
+												await new Promise(resolve => setTimeout(resolve, 1000));
+											}
+										}
+									}
+									
+									if (!contentResponse || (!contentResponse.fullHtml && !contentResponse.selectedHtml)) {
+										reject(new Error('Failed to extract page HTML after multiple attempts'));
+										return;
+									}
+									
+									// Use selectedHtml if available (user selection), otherwise use fullHtml
+									const pageHtml = contentResponse.selectedHtml || contentResponse.fullHtml;
+									
+									debugLog('NavigateAndExtractHtml', `HTML extraction successful, length: ${pageHtml.length}`);
+									
+									resolve(pageHtml);
+								} catch (error) {
+									reject(error);
+								}
+							}, 3000); // Wait 3 seconds for content to be ready
+						}
+					}
+				};
+				
+				// Add the listener BEFORE navigating
+				browser.tabs.onUpdated.addListener(onUpdatedListener);
+				
+				// Navigate to the URL
+				browser.tabs.update(tabId, { url: url }).then(() => {
+					debugLog('NavigateAndExtractHtml', 'Navigation command sent');
+					// Also check immediately in case the page is already loaded
+					browser.tabs.get(tabId).then((tab) => {
+						if (tab.status === 'complete') {
+							const currentUrl = tab.url || '';
+							const normalizedCurrentUrl = normalizeUrlForComparison(currentUrl);
+							if (normalizedCurrentUrl === normalizedTargetUrl || currentUrl.includes(url.split('?')[0])) {
+								// Page already loaded, trigger extraction
+								onUpdatedListener(tabId, { status: 'complete' }, tab);
+							}
+						}
+					}).catch(() => {
+						// Ignore errors, the listener will handle it
+					});
+				}).catch((error) => {
+					browser.tabs.onUpdated.removeListener(onUpdatedListener);
+					if (timeoutId) {
+						clearTimeout(timeoutId);
+					}
+					reject(error);
+				});
+			});
+		}
+
+		/**
 		 * Navigates to a URL, extracts HTML, converts to markdown, and returns the markdown
 		 * This is the complete flow: navigate -> get HTML -> get markdown -> apply scraper
+		 * @deprecated Use navigateAndExtractHtml instead for parser generation
 		 */
 		async function navigateAndExtractMarkdown(tabId: number, url: string): Promise<string> {
 			return new Promise((resolve, reject) => {
@@ -997,51 +1168,18 @@ document.addEventListener('DOMContentLoaded', async function() {
 							
 							debugLog('ScrapeAllPages', `Processing current page (page ${pageNumber})...`);
 							
-							// Get current page markdown (use noteContentField if available, otherwise extract and convert)
-							let currentPageMarkdown: string;
-							if (noteContentField.value && noteContentField.value.trim().length > 0) {
-								currentPageMarkdown = noteContentField.value;
-								debugLog('ScrapeAllPages', 'Using markdown from noteContentField');
-							} else {
-								debugLog('ScrapeAllPages', 'Extracting current page content and converting to markdown...');
-								// Extract HTML and convert to markdown
-								const contentResponse = await extractPageContent(currentTabId);
-								if (!contentResponse || !contentResponse.content) {
-									throw new Error('Failed to extract current page content');
-								}
-								
-								// Convert HTML to markdown
-								const tab = await getTabInfo(currentTabId);
-								const initializedContent = await initializePageContent(
-									contentResponse.content,
-									contentResponse.selectedHtml,
-									contentResponse.extractedContent,
-									tab.url,
-									contentResponse.schemaOrgData,
-									contentResponse.fullHtml,
-									contentResponse.highlights || [],
-									contentResponse.title,
-									contentResponse.author,
-									contentResponse.description,
-									contentResponse.favicon,
-									contentResponse.image,
-									contentResponse.published,
-									contentResponse.site,
-									contentResponse.wordCount,
-									contentResponse.metaTags
-								);
-								
-								if (!initializedContent || !initializedContent.currentVariables) {
-									throw new Error('Failed to convert HTML to markdown');
-								}
-								
-								// Get the markdown from variables ({{content}} is the markdown)
-								currentPageMarkdown = initializedContent.currentVariables['{{content}}'] || '';
-								debugLog('ScrapeAllPages', 'Markdown conversion successful');
+							// Get current page HTML
+							debugLog('ScrapeAllPages', 'Extracting current page HTML...');
+							const contentResponse = await extractPageContent(currentTabId);
+							if (!contentResponse || (!contentResponse.fullHtml && !contentResponse.selectedHtml)) {
+								throw new Error('Failed to extract current page HTML');
 							}
+							// Use selectedHtml if available (user selection), otherwise use fullHtml
+							const currentPageHtml = contentResponse.selectedHtml || contentResponse.fullHtml;
+							debugLog('ScrapeAllPages', 'HTML extraction successful');
 							
-							// Execute parser code on the markdown content
-							const extractedProducts = await executeParserCode(savedCode, currentPageMarkdown, currentTabId);
+							// Execute parser code on the HTML content
+							const extractedProducts = await executeParserCode(savedCode, currentPageHtml, currentTabId);
 							
 							// Check if we got products
 							if (!extractedProducts || extractedProducts.length === 0) {
@@ -1080,31 +1218,31 @@ document.addEventListener('DOMContentLoaded', async function() {
 								
 								debugLog('ScrapeAllPages', `Processing page ${pageNumber}: ${pageUrl}`);
 								
-								// Navigate to the page, extract HTML, convert to markdown - retry up to 3 times
-								let pageMarkdown: string | null = null;
+								// Navigate to the page and extract HTML - retry up to 3 times
+								let pageHtml: string | null = null;
 								let navigationSuccess = false;
 								
 								for (let navAttempt = 0; navAttempt < 3; navAttempt++) {
 									try {
-										// Complete flow: navigate -> get HTML -> get markdown
-										pageMarkdown = await navigateAndExtractMarkdown(currentTabId, pageUrl);
+										// Complete flow: navigate -> get HTML
+										pageHtml = await navigateAndExtractHtml(currentTabId, pageUrl);
 										navigationSuccess = true;
-										debugLog('ScrapeAllPages', `Navigation and markdown extraction successful (attempt ${navAttempt + 1})`);
+										debugLog('ScrapeAllPages', `Navigation and HTML extraction successful (attempt ${navAttempt + 1})`);
 										break;
 									} catch (navError) {
-										console.warn(`Navigation/markdown extraction attempt ${navAttempt + 1} failed for page ${pageNumber}:`, navError);
+										console.warn(`Navigation/HTML extraction attempt ${navAttempt + 1} failed for page ${pageNumber}:`, navError);
 										if (navAttempt < 2) {
 											await new Promise(resolve => setTimeout(resolve, 2000));
 										}
 									}
 								}
 								
-								if (!navigationSuccess || !pageMarkdown) {
-									throw new Error(`Failed to navigate to page ${pageNumber} and extract markdown after multiple attempts`);
+								if (!navigationSuccess || !pageHtml) {
+									throw new Error(`Failed to navigate to page ${pageNumber} and extract HTML after multiple attempts`);
 								}
 								
-								// Execute parser code on the markdown content
-								const extractedProducts = await executeParserCode(savedCode, pageMarkdown, currentTabId);
+								// Execute parser code on the HTML content
+								const extractedProducts = await executeParserCode(savedCode, pageHtml, currentTabId);
 								
 								// Check if we got products
 								if (!extractedProducts || extractedProducts.length === 0) {
