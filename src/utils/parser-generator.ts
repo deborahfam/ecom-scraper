@@ -325,7 +325,7 @@ export async function generateAndSaveParser(sampleText: string, pageTitle: strin
 	debugLog('ParserGenerator', 'Starting parser generation with reflection...');
 	
 	const originalUserMessage = `Analyze this e-commerce text and generate the 'extractProducts' function:\n\n${sampleText}`;
-	const MAX_ITERATIONS = 3;
+	const MAX_ITERATIONS = 5;
 	let lastCode: string | null = null;
 	let lastError: string | null = null;
 	
