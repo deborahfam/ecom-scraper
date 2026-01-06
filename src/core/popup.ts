@@ -868,24 +868,52 @@ document.addEventListener('DOMContentLoaded', async function() {
 							throw new Error('No saved parser code found for this page. Please use "Generate Code and Save" first to generate the parser code.');
 						}
 						
-						// Extract base URL without pagination
+						// Extract base URL and detect current page
 						const urlObj = new URL(baseUrl);
+						
+						// Read user preference for pagination parameter
+						const usePaginaParamCheckbox = document.getElementById('use-pagina-param') as HTMLInputElement;
+						const usePaginaParam = usePaginaParamCheckbox ? usePaginaParamCheckbox.checked : false;
+						
+						// Detect current page number from URL
+						let startPageNumber = 1;
+						const pageParamName = usePaginaParam ? 'pagina' : 'page';
+						const currentPageParam = urlObj.searchParams.get(pageParamName);
+						
+						if (currentPageParam) {
+							const parsedPage = parseInt(currentPageParam, 10);
+							if (!isNaN(parsedPage) && parsedPage > 0) {
+								startPageNumber = parsedPage;
+								debugLog('ScrapeAllPages', `Detected current page from URL: ${startPageNumber}`);
+							}
+						} else {
+							// Check the other parameter name as fallback
+							const fallbackParamName = usePaginaParam ? 'page' : 'pagina';
+							const fallbackPageParam = urlObj.searchParams.get(fallbackParamName);
+							if (fallbackPageParam) {
+								const parsedPage = parseInt(fallbackPageParam, 10);
+								if (!isNaN(parsedPage) && parsedPage > 0) {
+									startPageNumber = parsedPage;
+									debugLog('ScrapeAllPages', `Detected current page from fallback parameter: ${startPageNumber}`);
+								}
+							}
+						}
 						
 						// Remove any existing pagination parameters to get base URL
 						urlObj.searchParams.delete('pagina');
 						urlObj.searchParams.delete('page');
 						const baseUrlWithoutPagination = urlObj.toString();
 						
-						// Read user preference for pagination parameter
-						const usePaginaParamCheckbox = document.getElementById('use-pagina-param') as HTMLInputElement;
-						const usePaginaParam = usePaginaParamCheckbox ? usePaginaParamCheckbox.checked : false;
-						
 						// Read user preference for maximum pages
 						const maxPagesInput = document.getElementById('max-pages-input') as HTMLInputElement;
-						const maxPages = maxPagesInput ? parseInt(maxPagesInput.value, 10) || 500 : 500;
+						const maxPagesToScrape = maxPagesInput ? parseInt(maxPagesInput.value, 10) || 500 : 500;
+						
+						// Calculate the maximum page number (startPage + maxPagesToScrape - 1)
+						// If starting at page 12 and maxPagesToScrape is 3, we scrape pages 12, 13, 14
+						const maxPageNumber = startPageNumber + maxPagesToScrape - 1;
 						
 						const allProducts: any[] = [];
-						let pageNumber = 1;
+						let pageNumber = startPageNumber;
 						let hasMorePages = true;
 						
 						// First, scrape the current page
@@ -962,7 +990,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 						let consecutiveFailures = 0;
 						const maxConsecutiveFailures = 2; // Allow 2 consecutive failures before stopping
 						
-						while (hasMorePages && pageNumber <= maxPages && !shouldStopScraper) { // User-configurable limit
+						while (hasMorePages && pageNumber <= maxPageNumber && !shouldStopScraper) { // User-configurable limit
 							try {
 								// Check if user wants to stop
 								if (shouldStopScraper) {
