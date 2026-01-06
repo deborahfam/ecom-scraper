@@ -861,5 +861,11 @@
 	},
 	"stopping": {
 		"message": "Stopping..."
+	},
+	"saveAsJson": {
+		"message": "Save as JSON"
+	},
+	"saveAsCsv": {
+		"message": "Save as CSV"
 	}
 }

@@ -20,7 +20,7 @@ import { isBlankPage, isValidUrl } from '../utils/active-tab-manager';
 import { memoizeWithExpiration } from '../utils/memoize';
 import { debounce } from '../utils/debounce';
 import { sanitizeFileName } from '../utils/string-utils';
-import { saveFile } from '../utils/file-utils';
+import { saveFile, jsonToCsv } from '../utils/file-utils';
 import { translatePage, getMessage, setupLanguageAndDirection } from '../utils/i18n';
 import { generateAndSaveParser, loadSavedParserCode } from '../utils/parser-generator';
 import { executeParserCode } from '../utils/code-executor';
@@ -389,66 +389,114 @@ document.addEventListener('DOMContentLoaded', async function() {
 			});
 		}
 
+		// Setup dropdown functionality for obtain products button
 		const obtainProductsBtn = document.getElementById('obtain-products-btn') as HTMLButtonElement;
-		if (obtainProductsBtn) {
-			obtainProductsBtn.addEventListener('click', async (e) => {
+		const obtainProductsDropdown = document.getElementById('obtain-products-dropdown') as HTMLDivElement;
+		if (obtainProductsBtn && obtainProductsDropdown) {
+			// Toggle dropdown on button click
+			obtainProductsBtn.addEventListener('click', (e) => {
 				e.preventDefault();
-				const noteContentField = document.getElementById('note-content-field') as HTMLTextAreaElement;
-				const noteNameField = document.getElementById('note-name-field') as HTMLTextAreaElement;
-				if (noteContentField && noteNameField && currentTabId) {
-					const saveJsonBtn = document.getElementById('save-json-btn') as HTMLButtonElement;
-					try {
-						obtainProductsBtn.classList.add('processing');
-						obtainProductsBtn.textContent = getMessage('processing');
-						obtainProductsBtn.disabled = true;
-						
-						// Also disable the save JSON button
-						if (saveJsonBtn) {
-							saveJsonBtn.disabled = true;
-						}
-						
-						// Get current page URL
-						const tab = await getTabInfo(currentTabId);
-						const pageUrl = tab.url;
-						
-						// Step 1: Load saved parser code for this URL
-						debugLog('ObtainProducts', 'Loading saved parser code...');
-						const savedCode = await loadSavedParserCode(pageUrl);
-						
-						if (!savedCode) {
-							throw new Error('No saved parser code found for this page. Please use "Save JSON" first to generate the parser code.');
-						}
-						
-						// Step 2: Execute the saved code on the note content
-						debugLog('ObtainProducts', 'Executing saved parser code...');
-						const extractedProducts = await executeParserCode(savedCode, noteContentField.value, currentTabId);
-						
-						// Step 3: Save the JSON result
-						debugLog('ObtainProducts', 'Saving JSON result...');
-						const sanitizedTitle = noteNameField.value.replace(/[\\/:*?"<>|]/g, '').trim() || 'untitled';
-						const jsonFileName = `code-generated/${sanitizedTitle}/extracted-products.json`;
-						
-						await saveFile({
-							content: JSON.stringify(extractedProducts, null, 2),
-							fileName: jsonFileName,
-							mimeType: 'application/json',
-							tabId: currentTabId
-						});
-						
-						debugLog('ObtainProducts', 'Process completed successfully');
-					} catch (error) {
-						console.error('Failed to obtain products:', error);
-						alert(getMessage('obtainProductsError'));
-					} finally {
-						obtainProductsBtn.classList.remove('processing');
-						obtainProductsBtn.textContent = getMessage('obtainProducts');
-						obtainProductsBtn.disabled = false;
-						
-						// Re-enable the save JSON button
-						if (saveJsonBtn) {
-							saveJsonBtn.disabled = false;
+				e.stopPropagation();
+				obtainProductsDropdown.classList.toggle('show');
+				obtainProductsBtn.classList.toggle('active');
+				
+				// Close other dropdowns
+				const scrapeAllDropdown = document.getElementById('scrape-all-dropdown');
+				const scrapeAllBtn = document.getElementById('scrape-all-pages-btn');
+				if (scrapeAllDropdown && scrapeAllBtn) {
+					scrapeAllDropdown.classList.remove('show');
+					scrapeAllBtn.classList.remove('active');
+				}
+			});
+			
+			// Handle dropdown item clicks
+			const dropdownItems = obtainProductsDropdown.querySelectorAll('.dropdown-item');
+			dropdownItems.forEach(item => {
+				item.addEventListener('click', async (e) => {
+					e.preventDefault();
+					e.stopPropagation();
+					const format = (item as HTMLElement).dataset.format || 'json';
+					obtainProductsDropdown.classList.remove('show');
+					obtainProductsBtn.classList.remove('active');
+					
+					const noteContentField = document.getElementById('note-content-field') as HTMLTextAreaElement;
+					const noteNameField = document.getElementById('note-name-field') as HTMLTextAreaElement;
+					if (noteContentField && noteNameField && currentTabId) {
+						const saveJsonBtn = document.getElementById('save-json-btn') as HTMLButtonElement;
+						try {
+							obtainProductsBtn.classList.add('processing');
+							obtainProductsBtn.textContent = getMessage('processing');
+							obtainProductsBtn.disabled = true;
+							
+							// Also disable the save JSON button
+							if (saveJsonBtn) {
+								saveJsonBtn.disabled = true;
+							}
+							
+							// Get current page URL
+							const tab = await getTabInfo(currentTabId);
+							const pageUrl = tab.url;
+							
+							// Step 1: Load saved parser code for this URL
+							debugLog('ObtainProducts', 'Loading saved parser code...');
+							const savedCode = await loadSavedParserCode(pageUrl);
+							
+							if (!savedCode) {
+								throw new Error('No saved parser code found for this page. Please use "Save JSON" first to generate the parser code.');
+							}
+							
+							// Step 2: Execute the saved code on the note content
+							debugLog('ObtainProducts', 'Executing saved parser code...');
+							const extractedProducts = await executeParserCode(savedCode, noteContentField.value, currentTabId);
+							
+							// Step 3: Save the result in the selected format
+							debugLog('ObtainProducts', `Saving ${format.toUpperCase()} result...`);
+							const sanitizedTitle = noteNameField.value.replace(/[\\/:*?"<>|]/g, '').trim() || 'untitled';
+							
+							let content: string;
+							let fileName: string;
+							let mimeType: string;
+							
+							if (format === 'csv') {
+								content = jsonToCsv(extractedProducts);
+								fileName = `code-generated/${sanitizedTitle}/extracted-products.csv`;
+								mimeType = 'text/csv';
+							} else {
+								content = JSON.stringify(extractedProducts, null, 2);
+								fileName = `code-generated/${sanitizedTitle}/extracted-products.json`;
+								mimeType = 'application/json';
+							}
+							
+							await saveFile({
+								content,
+								fileName,
+								mimeType,
+								tabId: currentTabId
+							});
+							
+							debugLog('ObtainProducts', 'Process completed successfully');
+						} catch (error) {
+							console.error('Failed to obtain products:', error);
+							alert(getMessage('obtainProductsError'));
+						} finally {
+							obtainProductsBtn.classList.remove('processing');
+							obtainProductsBtn.textContent = getMessage('obtainProducts');
+							obtainProductsBtn.disabled = false;
+							
+							// Re-enable the save JSON button
+							if (saveJsonBtn) {
+								saveJsonBtn.disabled = false;
+							}
 						}
 					}
+				});
+			});
+			
+			// Close dropdown when clicking outside
+			document.addEventListener('click', (e) => {
+				if (!obtainProductsBtn.contains(e.target as Node) && !obtainProductsDropdown.contains(e.target as Node)) {
+					obtainProductsDropdown.classList.remove('show');
+					obtainProductsBtn.classList.remove('active');
 				}
 			});
 		}
@@ -823,50 +871,76 @@ document.addEventListener('DOMContentLoaded', async function() {
 			});
 		}
 
+		// Setup dropdown functionality for scrape all pages button
 		const scrapeAllPagesBtn = document.getElementById('scrape-all-pages-btn') as HTMLButtonElement;
-		if (scrapeAllPagesBtn) {
-			scrapeAllPagesBtn.addEventListener('click', async (e) => {
+		const scrapeAllDropdown = document.getElementById('scrape-all-dropdown') as HTMLDivElement;
+		if (scrapeAllPagesBtn && scrapeAllDropdown) {
+			// Toggle dropdown on button click
+			scrapeAllPagesBtn.addEventListener('click', (e) => {
 				e.preventDefault();
-				const noteContentField = document.getElementById('note-content-field') as HTMLTextAreaElement;
-				const noteNameField = document.getElementById('note-name-field') as HTMLTextAreaElement;
-				if (noteContentField && noteNameField && currentTabId) {
-					const saveJsonBtn = document.getElementById('save-json-btn') as HTMLButtonElement;
-					const obtainProductsBtn = document.getElementById('obtain-products-btn') as HTMLButtonElement;
+				e.stopPropagation();
+				scrapeAllDropdown.classList.toggle('show');
+				scrapeAllPagesBtn.classList.toggle('active');
+				
+				// Close other dropdowns
+				const obtainProductsDropdown = document.getElementById('obtain-products-dropdown');
+				const obtainProductsBtn = document.getElementById('obtain-products-btn');
+				if (obtainProductsDropdown && obtainProductsBtn) {
+					obtainProductsDropdown.classList.remove('show');
+					obtainProductsBtn.classList.remove('active');
+				}
+			});
+			
+			// Handle dropdown item clicks
+			const dropdownItems = scrapeAllDropdown.querySelectorAll('.dropdown-item');
+			dropdownItems.forEach(item => {
+				item.addEventListener('click', async (e) => {
+					e.preventDefault();
+					e.stopPropagation();
+					const format = (item as HTMLElement).dataset.format || 'json';
+					scrapeAllDropdown.classList.remove('show');
+					scrapeAllPagesBtn.classList.remove('active');
 					
-					// Reset stop flag
-					shouldStopScraper = false;
-					
-					// Show stop button and reset its text
-					const stopScraperBtn = document.getElementById('stop-scraper-btn') as HTMLButtonElement;
-					if (stopScraperBtn) {
-						stopScraperBtn.style.display = 'block';
-						stopScraperBtn.disabled = false;
-						stopScraperBtn.textContent = getMessage('stopScraperAndSave');
-					}
-					
-					try {
-						scrapeAllPagesBtn.classList.add('processing');
-						scrapeAllPagesBtn.disabled = true;
+					const noteContentField = document.getElementById('note-content-field') as HTMLTextAreaElement;
+					const noteNameField = document.getElementById('note-name-field') as HTMLTextAreaElement;
+					if (noteContentField && noteNameField && currentTabId) {
+						const saveJsonBtn = document.getElementById('save-json-btn') as HTMLButtonElement;
+						const obtainProductsBtn = document.getElementById('obtain-products-btn') as HTMLButtonElement;
 						
-						// Also disable other buttons
-						if (saveJsonBtn) {
-							saveJsonBtn.disabled = true;
-						}
-						if (obtainProductsBtn) {
-							obtainProductsBtn.disabled = true;
+						// Reset stop flag
+						shouldStopScraper = false;
+						
+						// Show stop button and reset its text
+						const stopScraperBtn = document.getElementById('stop-scraper-btn') as HTMLButtonElement;
+						if (stopScraperBtn) {
+							stopScraperBtn.style.display = 'block';
+							stopScraperBtn.disabled = false;
+							stopScraperBtn.textContent = getMessage('stopScraperAndSave');
 						}
 						
-						// Get current page URL
-						const tab = await getTabInfo(currentTabId);
-						const baseUrl = tab.url;
-						
-						// Load saved parser code
-						debugLog('ScrapeAllPages', 'Loading saved parser code...');
-						const savedCode = await loadSavedParserCode(baseUrl);
-						
-						if (!savedCode) {
-							throw new Error('No saved parser code found for this page. Please use "Generate Code and Save" first to generate the parser code.');
-						}
+						try {
+							scrapeAllPagesBtn.classList.add('processing');
+							scrapeAllPagesBtn.disabled = true;
+							
+							// Also disable other buttons
+							if (saveJsonBtn) {
+								saveJsonBtn.disabled = true;
+							}
+							if (obtainProductsBtn) {
+								obtainProductsBtn.disabled = true;
+							}
+							
+							// Get current page URL
+							const tab = await getTabInfo(currentTabId);
+							const baseUrl = tab.url;
+							
+							// Load saved parser code
+							debugLog('ScrapeAllPages', 'Loading saved parser code...');
+							const savedCode = await loadSavedParserCode(baseUrl);
+							
+							if (!savedCode) {
+								throw new Error('No saved parser code found for this page. Please use "Generate Code and Save" first to generate the parser code.');
+							}
 						
 						// Extract base URL and detect current page
 						const urlObj = new URL(baseUrl);
@@ -1085,17 +1159,30 @@ document.addEventListener('DOMContentLoaded', async function() {
 							}
 						}
 						
-						// Save the accumulated results
+						// Save the accumulated results in the selected format
 						const wasStopped = shouldStopScraper;
 						const pagesProcessed = wasStopped ? pageNumber - 1 : pageNumber - 1;
 						debugLog('ScrapeAllPages', `Saving results: ${allProducts.length} total products from ${pagesProcessed} pages${wasStopped ? ' (stopped by user)' : ''}`);
 						const sanitizedTitle = noteNameField.value.replace(/[\\/:*?"<>|]/g, '').trim() || 'untitled';
-						const jsonFileName = `code-generated/${sanitizedTitle}/extracted-products-all-pages.json`;
+						
+						let content: string;
+						let fileName: string;
+						let mimeType: string;
+						
+						if (format === 'csv') {
+							content = jsonToCsv(allProducts);
+							fileName = `code-generated/${sanitizedTitle}/extracted-products-all-pages.csv`;
+							mimeType = 'text/csv';
+						} else {
+							content = JSON.stringify(allProducts, null, 2);
+							fileName = `code-generated/${sanitizedTitle}/extracted-products-all-pages.json`;
+							mimeType = 'application/json';
+						}
 						
 						await saveFile({
-							content: JSON.stringify(allProducts, null, 2),
-							fileName: jsonFileName,
-							mimeType: 'application/json',
+							content,
+							fileName,
+							mimeType,
 							tabId: currentTabId
 						});
 						
@@ -1139,6 +1226,17 @@ document.addEventListener('DOMContentLoaded', async function() {
 					}
 				}
 			});
+		});
+		
+		// Close dropdown when clicking outside
+		if (scrapeAllPagesBtn && scrapeAllDropdown) {
+			document.addEventListener('click', (e) => {
+				if (!scrapeAllPagesBtn.contains(e.target as Node) && !scrapeAllDropdown.contains(e.target as Node)) {
+					scrapeAllDropdown.classList.remove('show');
+					scrapeAllPagesBtn.classList.remove('active');
+				}
+			});
+		}
 		}
 
 		// Add event listener for stop scraper button

@@ -869,5 +869,11 @@
 	},
 	"stopping": {
 		"message": "Deteniendo..."
+	},
+	"saveAsJson": {
+		"message": "Guardar como JSON"
+	},
+	"saveAsCsv": {
+		"message": "Guardar como CSV"
 	}
 }

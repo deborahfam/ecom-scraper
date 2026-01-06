@@ -16,6 +16,57 @@ export function base64EncodeUnicode(str: string): string {
 	return btoa(utf8Bytes);
 }
 
+/**
+ * Converts an array of JSON objects to CSV format
+ * @param jsonData Array of objects to convert
+ * @returns CSV string
+ */
+export function jsonToCsv(jsonData: any[]): string {
+	if (!jsonData || jsonData.length === 0) {
+		return '';
+	}
+
+	// Get all unique keys from all objects
+	const allKeys = new Set<string>();
+	jsonData.forEach(obj => {
+		if (obj && typeof obj === 'object') {
+			Object.keys(obj).forEach(key => allKeys.add(key));
+		}
+	});
+
+	const headers = Array.from(allKeys);
+	
+	// Escape CSV values (handle commas, quotes, newlines)
+	const escapeCsvValue = (value: any): string => {
+		if (value === null || value === undefined) {
+			return '';
+		}
+		const str = String(value);
+		// If contains comma, quote, or newline, wrap in quotes and escape quotes
+		if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+			return `"${str.replace(/"/g, '""')}"`;
+		}
+		return str;
+	};
+
+	// Build CSV
+	const csvRows: string[] = [];
+	
+	// Header row
+	csvRows.push(headers.map(escapeCsvValue).join(','));
+
+	// Data rows
+	jsonData.forEach(obj => {
+		const row = headers.map(header => {
+			const value = obj && typeof obj === 'object' ? obj[header] : '';
+			return escapeCsvValue(value);
+		});
+		csvRows.push(row.join(','));
+	});
+
+	return csvRows.join('\n');
+}
+
 export async function saveFile({
 	content,
 	fileName,
