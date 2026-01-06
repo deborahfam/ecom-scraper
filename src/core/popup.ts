@@ -91,6 +91,111 @@ async function getCurrentTabInfo(): Promise<{ url: string; title?: string }> {
 	}
 }
 
+/**
+ * Checks if there's a saved and functional extractor code for the current page
+ * @param pageUrl - The URL of the current page
+ * @returns Object with hasExtractor flag and isValid flag
+ */
+async function checkExtractorStatus(pageUrl: string): Promise<{ hasExtractor: boolean; isValid: boolean }> {
+	try {
+		const savedCode = await loadSavedParserCode(pageUrl);
+		
+		if (!savedCode || savedCode.trim() === '') {
+			return { hasExtractor: false, isValid: false };
+		}
+		
+		// Basic validation: check if code looks like valid JavaScript with extractProducts function
+		// We check for the function definition and that it's not empty
+		const hasExtractProductsFunction = savedCode.includes('extractProducts') && 
+		                                   (savedCode.includes('function') || savedCode.includes('=>'));
+		
+		if (!hasExtractProductsFunction) {
+			return { hasExtractor: true, isValid: false };
+		}
+		
+		// Additional validation: check for common syntax errors
+		// Check for balanced braces and parentheses (basic syntax check)
+		const openBraces = (savedCode.match(/{/g) || []).length;
+		const closeBraces = (savedCode.match(/}/g) || []).length;
+		const openParens = (savedCode.match(/\(/g) || []).length;
+		const closeParens = (savedCode.match(/\)/g) || []).length;
+		
+		if (openBraces !== closeBraces || openParens !== closeParens) {
+			debugLog('ExtractorStatus', 'Extractor code has syntax errors (unbalanced braces/parentheses)');
+			return { hasExtractor: true, isValid: false };
+		}
+		
+		// If code exists, has the function, and passes basic syntax checks, assume it's valid
+		// Full execution validation will happen when user tries to use it
+		return { hasExtractor: true, isValid: true };
+	} catch (error) {
+		console.error('Error checking extractor status:', error);
+		return { hasExtractor: false, isValid: false };
+	}
+}
+
+/**
+ * Helper function to enable/disable both obtain products button and menu button together
+ * @param disabled - Whether to disable the buttons
+ */
+function setObtainProductsButtonsState(disabled: boolean) {
+	const obtainProductsBtn = document.getElementById('obtain-products-btn') as HTMLButtonElement;
+	const obtainProductsMenuBtn = document.getElementById('obtain-products-menu-btn') as HTMLButtonElement;
+	
+	if (obtainProductsBtn) {
+		obtainProductsBtn.disabled = disabled;
+	}
+	if (obtainProductsMenuBtn) {
+		obtainProductsMenuBtn.disabled = disabled;
+	}
+}
+
+/**
+ * Updates the UI based on extractor status
+ * @param hasExtractor - Whether an extractor exists
+ * @param isValid - Whether the extractor is valid/functional
+ */
+async function updateExtractorUI(hasExtractor: boolean, isValid: boolean) {
+	const generateExtractorBtn = document.getElementById('generate-extractor-btn') as HTMLButtonElement;
+	const obtainProductsBtn = document.getElementById('obtain-products-btn') as HTMLButtonElement;
+	const obtainProductsMenuBtn = document.getElementById('obtain-products-menu-btn') as HTMLButtonElement;
+	const statusMessage = document.getElementById('extractor-status-message') as HTMLDivElement;
+	
+	if (!generateExtractorBtn || !obtainProductsBtn) {
+		return;
+	}
+	
+	if (hasExtractor && isValid) {
+		// Estado 2: Extractor generado y funcional
+		generateExtractorBtn.textContent = getMessage('regenerateExtractor');
+		generateExtractorBtn.classList.remove('btn-primary', 'btn-orange');
+		generateExtractorBtn.classList.add('btn-secondary', 'btn-black');
+		
+		obtainProductsBtn.title = ''; // Remove tooltip
+		setObtainProductsButtonsState(false); // Habilitar ambos botones
+		
+		if (statusMessage) {
+			statusMessage.textContent = getMessage('extractorReady');
+			statusMessage.className = 'extractor-status-message extractor-ready';
+			statusMessage.style.display = 'block';
+		}
+	} else {
+		// Estado 1: Sin extractor o extractor no funcional
+		generateExtractorBtn.textContent = getMessage('generateExtractor');
+		generateExtractorBtn.classList.remove('btn-secondary', 'btn-black');
+		generateExtractorBtn.classList.add('btn-primary', 'btn-orange');
+		
+		obtainProductsBtn.title = getMessage('firstGenerateExtractor');
+		setObtainProductsButtonsState(true); // Deshabilitar ambos botones
+		
+		if (statusMessage) {
+			statusMessage.textContent = getMessage('firstGenerateExtractor');
+			statusMessage.className = 'extractor-status-message extractor-pending';
+			statusMessage.style.display = 'block';
+		}
+	}
+}
+
 // Memoize extractPageContent with URL-sensitive key and short expiration
 const memoizedExtractPageContent = memoizeWithExpiration(
 	async (tabId: number) => {
@@ -326,30 +431,28 @@ document.addEventListener('DOMContentLoaded', async function() {
 		// Setup event listeners for popup buttons
 		// Removed: refresh button, settings button, and other header icons
 
-		const saveJsonBtn = document.getElementById('save-json-btn') as HTMLButtonElement;
-		if (saveJsonBtn) {
-			saveJsonBtn.addEventListener('click', async (e) => {
+		const generateExtractorBtn = document.getElementById('generate-extractor-btn') as HTMLButtonElement;
+		if (generateExtractorBtn) {
+			generateExtractorBtn.addEventListener('click', async (e) => {
 				e.preventDefault();
 				const noteContentField = document.getElementById('note-content-field') as HTMLTextAreaElement;
 				const noteNameField = document.getElementById('note-name-field') as HTMLTextAreaElement;
 				if (noteContentField && noteNameField && currentTabId) {
 					const obtainProductsBtn = document.getElementById('obtain-products-btn') as HTMLButtonElement;
 					try {
-						saveJsonBtn.classList.add('processing');
-						saveJsonBtn.textContent = getMessage('processing');
-						saveJsonBtn.disabled = true;
+						generateExtractorBtn.classList.add('processing');
+						generateExtractorBtn.textContent = getMessage('processing');
+						generateExtractorBtn.disabled = true;
 						
-						// Also disable the obtain products button
-						if (obtainProductsBtn) {
-							obtainProductsBtn.disabled = true;
-						}
+						// Also disable the obtain products buttons
+						setObtainProductsButtonsState(true);
 						
 						// Get current page URL
 						const tab = await getTabInfo(currentTabId);
 						const pageUrl = tab.url;
 						
 						// Extract HTML content from the page
-						debugLog('SaveJson', 'Extracting HTML content from page...');
+						debugLog('GenerateExtractor', 'Extracting HTML content from page...');
 						const contentResponse = await extractPageContent(currentTabId);
 						if (!contentResponse || !contentResponse.fullHtml) {
 							throw new Error('Failed to extract HTML content from page');
@@ -358,18 +461,18 @@ document.addEventListener('DOMContentLoaded', async function() {
 						const pageHtml = contentResponse.selectedHtml || contentResponse.fullHtml;
 						
 						// Step 1: Generate the parser code using HTML
-						debugLog('SaveJson', 'Generating parser code from HTML...');
+						debugLog('GenerateExtractor', 'Generating parser code from HTML...');
 						const generatedCode = await generateAndSaveParser(pageHtml, noteNameField.value, pageUrl, currentTabId);
 						
 						// Step 2: Execute the code on the HTML content
-						debugLog('SaveJson', 'Executing parser code on HTML...');
+						debugLog('GenerateExtractor', 'Executing parser code on HTML...');
 						if (!currentTabId) {
 							throw new Error('Tab ID is required to execute parser code');
 						}
 						const extractedProducts = await executeParserCode(generatedCode, pageHtml, currentTabId);
 						
 						// Step 3: Save the JSON result
-						debugLog('SaveJson', 'Saving JSON result...');
+						debugLog('GenerateExtractor', 'Saving JSON result...');
 						const sanitizedTitle = noteNameField.value.replace(/[\\/:*?"<>|]/g, '').trim() || 'untitled';
 						const jsonFileName = `code-generated/${sanitizedTitle}/extracted-products.json`;
 						
@@ -380,66 +483,361 @@ document.addEventListener('DOMContentLoaded', async function() {
 							tabId: currentTabId
 						});
 						
-						debugLog('SaveJson', 'Process completed successfully');
-					} catch (error) {
-						console.error('Failed to save JSON:', error);
-						alert(getMessage('saveJsonError'));
-					} finally {
-						saveJsonBtn.classList.remove('processing');
-						saveJsonBtn.textContent = getMessage('generateCodeAndSave');
-						saveJsonBtn.disabled = false;
+						debugLog('GenerateExtractor', 'Process completed successfully');
 						
-						// Re-enable the obtain products button
-						if (obtainProductsBtn) {
-							obtainProductsBtn.disabled = false;
+						// Update UI to reflect that extractor is now ready
+						await updateExtractorUI(true, true);
+					} catch (error) {
+						console.error('Failed to generate extractor:', error);
+						alert(getMessage('saveJsonError'));
+						// Update UI to reflect error state
+						const tab = await getTabInfo(currentTabId);
+						if (tab) {
+							const status = await checkExtractorStatus(tab.url);
+							await updateExtractorUI(status.hasExtractor, status.isValid);
+						}
+					} finally {
+						generateExtractorBtn.classList.remove('processing');
+						generateExtractorBtn.disabled = false;
+						
+						// Update button text based on current state
+						const tab = await getTabInfo(currentTabId);
+						if (tab) {
+							const status = await checkExtractorStatus(tab.url);
+							if (status.hasExtractor && status.isValid) {
+								generateExtractorBtn.textContent = getMessage('regenerateExtractor');
+							} else {
+								generateExtractorBtn.textContent = getMessage('generateExtractor');
+							}
 						}
 					}
 				}
 			});
 		}
 
-		// Setup dropdown functionality for obtain products button
-		const obtainProductsBtn = document.getElementById('obtain-products-btn') as HTMLButtonElement;
-		const obtainProductsDropdown = document.getElementById('obtain-products-dropdown') as HTMLDivElement;
-		if (obtainProductsBtn && obtainProductsDropdown) {
-			// Toggle dropdown on button click
-			obtainProductsBtn.addEventListener('click', (e) => {
-				e.preventDefault();
-				e.stopPropagation();
-				obtainProductsDropdown.classList.toggle('show');
-				obtainProductsBtn.classList.toggle('active');
+		/**
+		 * Function to handle scraping all pages (reusable)
+		 */
+		async function handleScrapeAllPages(buttonElement: HTMLButtonElement, format: string, noteNameField: HTMLTextAreaElement, generateExtractorBtn: HTMLButtonElement | null) {
+			if (!currentTabId) return;
+			
+			const obtainProductsBtn = document.getElementById('obtain-products-btn') as HTMLButtonElement;
+			
+			// Reset stop flag
+			shouldStopScraper = false;
+			
+			// Show stop button and reset its text
+			const stopScraperBtn = document.getElementById('stop-scraper-btn') as HTMLButtonElement;
+			if (stopScraperBtn) {
+				stopScraperBtn.style.display = 'block';
+				stopScraperBtn.disabled = false;
+				stopScraperBtn.textContent = getMessage('stopScraperAndSave');
+			}
+			
+			try {
+				buttonElement.classList.add('processing');
+				buttonElement.disabled = true;
 				
-				// Close other dropdowns
-				const scrapeAllDropdown = document.getElementById('scrape-all-dropdown');
-				const scrapeAllBtn = document.getElementById('scrape-all-pages-btn');
-				if (scrapeAllDropdown && scrapeAllBtn) {
-					scrapeAllDropdown.classList.remove('show');
-					scrapeAllBtn.classList.remove('active');
+				// Also disable other buttons
+				if (generateExtractorBtn) {
+					generateExtractorBtn.disabled = true;
 				}
+				setObtainProductsButtonsState(true);
+				
+				// Get current page URL
+				const tab = await getTabInfo(currentTabId);
+				const baseUrl = tab.url;
+				
+				// Load saved parser code
+				debugLog('ScrapeAllPages', 'Loading saved parser code...');
+				const savedCode = await loadSavedParserCode(baseUrl);
+				
+				if (!savedCode) {
+					throw new Error('No saved parser code found for this page. Please use "Generate Code and Save" first to generate the parser code.');
+				}
+			
+			// Extract base URL and detect current page
+			const urlObj = new URL(baseUrl);
+			
+			// Read user preference for pagination parameter
+			const usePaginaParamCheckbox = document.getElementById('use-pagina-param') as HTMLInputElement;
+			const usePaginaParam = usePaginaParamCheckbox ? usePaginaParamCheckbox.checked : false;
+			
+			// Detect current page number from URL
+			let startPageNumber = 1;
+			const pageParamName = usePaginaParam ? 'pagina' : 'page';
+			const currentPageParam = urlObj.searchParams.get(pageParamName);
+			
+			if (currentPageParam) {
+				const parsedPage = parseInt(currentPageParam, 10);
+				if (!isNaN(parsedPage) && parsedPage > 0) {
+					startPageNumber = parsedPage;
+					debugLog('ScrapeAllPages', `Detected current page from URL: ${startPageNumber}`);
+				}
+			} else {
+				// Check the other parameter name as fallback
+				const fallbackParamName = usePaginaParam ? 'page' : 'pagina';
+				const fallbackPageParam = urlObj.searchParams.get(fallbackParamName);
+				if (fallbackPageParam) {
+					const parsedPage = parseInt(fallbackPageParam, 10);
+					if (!isNaN(parsedPage) && parsedPage > 0) {
+						startPageNumber = parsedPage;
+						debugLog('ScrapeAllPages', `Detected current page from fallback parameter: ${startPageNumber}`);
+					}
+				}
+			}
+			
+			// Remove any existing pagination parameters to get base URL
+			urlObj.searchParams.delete('pagina');
+			urlObj.searchParams.delete('page');
+			const baseUrlWithoutPagination = urlObj.toString();
+			
+			// Read user preference for maximum pages
+			const maxPagesInput = document.getElementById('max-pages-input') as HTMLInputElement;
+			const maxPagesToScrape = maxPagesInput ? parseInt(maxPagesInput.value, 10) || 500 : 500;
+			
+			// Calculate the maximum page number (startPage + maxPagesToScrape - 1)
+			// If starting at page 12 and maxPagesToScrape is 3, we scrape pages 12, 13, 14
+			const maxPageNumber = startPageNumber + maxPagesToScrape - 1;
+			
+			const allProducts: any[] = [];
+			let pageNumber = startPageNumber;
+			let hasMorePages = true;
+			
+			// First, scrape the current page
+			try {
+				// Update button text
+				buttonElement.textContent = `${getMessage('processing')}...${pageNumber}`;
+				
+				debugLog('ScrapeAllPages', `Processing current page (page ${pageNumber})...`);
+				
+				// Get current page HTML
+				debugLog('ScrapeAllPages', 'Extracting current page HTML...');
+				const contentResponse = await extractPageContent(currentTabId);
+				if (!contentResponse || (!contentResponse.fullHtml && !contentResponse.selectedHtml)) {
+					throw new Error('Failed to extract current page HTML');
+				}
+				// Use selectedHtml if available (user selection), otherwise use fullHtml
+				const currentPageHtml = contentResponse.selectedHtml || contentResponse.fullHtml;
+				debugLog('ScrapeAllPages', 'HTML extraction successful');
+				
+				// Execute parser code on the HTML content
+				const extractedProducts = await executeParserCode(savedCode, currentPageHtml, currentTabId);
+				
+				// Check if we got products
+				if (!extractedProducts || extractedProducts.length === 0) {
+					debugLog('ScrapeAllPages', `No products found on current page, stopping.`);
+					hasMorePages = false;
+				} else {
+					// Add products to the accumulated list
+					allProducts.push(...extractedProducts);
+					debugLog('ScrapeAllPages', `Current page: Found ${extractedProducts.length} products. Total so far: ${allProducts.length}`);
+					
+					// Move to next page
+					pageNumber++;
+				}
+			} catch (pageError) {
+				console.error(`Error processing current page:`, pageError);
+				throw pageError;
+			}
+			
+			// Now iterate through remaining pages
+			let consecutiveFailures = 0;
+			const maxConsecutiveFailures = 2; // Allow 2 consecutive failures before stopping
+			
+			while (hasMorePages && pageNumber <= maxPageNumber && !shouldStopScraper) { // User-configurable limit
+				try {
+					// Check if user wants to stop
+					if (shouldStopScraper) {
+						debugLog('ScrapeAllPages', 'User requested to stop scraper');
+						break;
+					}
+					
+					// Update button text
+					buttonElement.textContent = `${getMessage('processing')}...${pageNumber}`;
+					
+					// Build URL for this page
+					const pageUrl = buildPaginationUrl(baseUrlWithoutPagination, pageNumber, usePaginaParam);
+					
+					debugLog('ScrapeAllPages', `Processing page ${pageNumber}: ${pageUrl}`);
+					
+					// Navigate to the page and extract HTML - retry up to 3 times
+					let pageHtml: string | null = null;
+					let navigationSuccess = false;
+					
+					for (let navAttempt = 0; navAttempt < 3; navAttempt++) {
+						try {
+							// Complete flow: navigate -> get HTML
+							pageHtml = await navigateAndExtractHtml(currentTabId, pageUrl);
+							navigationSuccess = true;
+							debugLog('ScrapeAllPages', `Navigation and HTML extraction successful (attempt ${navAttempt + 1})`);
+							break;
+						} catch (navError) {
+							console.warn(`Navigation/HTML extraction attempt ${navAttempt + 1} failed for page ${pageNumber}:`, navError);
+							if (navAttempt < 2) {
+								await new Promise(resolve => setTimeout(resolve, 2000));
+							}
+						}
+					}
+					
+					if (!navigationSuccess || !pageHtml) {
+						throw new Error(`Failed to navigate to page ${pageNumber} and extract HTML after multiple attempts`);
+					}
+					
+					// Execute parser code on the HTML content
+					const extractedProducts = await executeParserCode(savedCode, pageHtml, currentTabId);
+					
+					// Check if we got products
+					if (!extractedProducts || extractedProducts.length === 0) {
+						debugLog('ScrapeAllPages', `No products found on page ${pageNumber}`);
+						consecutiveFailures++;
+						
+						if (consecutiveFailures >= maxConsecutiveFailures) {
+							debugLog('ScrapeAllPages', `Stopping after ${consecutiveFailures} consecutive pages with no products`);
+							hasMorePages = false;
+							break;
+						}
+						
+						// Try next page even if this one had no products
+						pageNumber++;
+						await new Promise(resolve => setTimeout(resolve, 1000));
+						continue;
+					}
+					
+					// Reset failure counter on success
+					consecutiveFailures = 0;
+					
+					// Add products to the accumulated list
+					allProducts.push(...extractedProducts);
+					debugLog('ScrapeAllPages', `Page ${pageNumber}: Found ${extractedProducts.length} products. Total so far: ${allProducts.length}`);
+					
+					// Move to next page
+					pageNumber++;
+					
+					// Small delay between pages to avoid overwhelming the server
+					await new Promise(resolve => setTimeout(resolve, 1500));
+					
+					// Check again if user wants to stop after delay
+					if (shouldStopScraper) {
+						debugLog('ScrapeAllPages', 'User requested to stop scraper after delay');
+						break;
+					}
+					
+				} catch (pageError) {
+					console.error(`Error processing page ${pageNumber}:`, pageError);
+					consecutiveFailures++;
+					
+					if (consecutiveFailures >= maxConsecutiveFailures) {
+						debugLog('ScrapeAllPages', `Stopping after ${consecutiveFailures} consecutive errors`);
+						hasMorePages = false;
+						break;
+					}
+					
+					// Try next page even if this one failed
+					debugLog('ScrapeAllPages', `Retrying next page after error (failure ${consecutiveFailures}/${maxConsecutiveFailures})`);
+					pageNumber++;
+					await new Promise(resolve => setTimeout(resolve, 2000));
+				}
+			}
+			
+			// Save the accumulated results in the selected format
+			const wasStopped = shouldStopScraper;
+			const pagesProcessed = wasStopped ? pageNumber - 1 : pageNumber - 1;
+			debugLog('ScrapeAllPages', `Saving results: ${allProducts.length} total products from ${pagesProcessed} pages${wasStopped ? ' (stopped by user)' : ''}`);
+			const sanitizedTitle = noteNameField.value.replace(/[\\/:*?"<>|]/g, '').trim() || 'untitled';
+			
+			let content: string;
+			let fileName: string;
+			let mimeType: string;
+			
+			if (format === 'csv') {
+				content = jsonToCsv(allProducts);
+				fileName = `code-generated/${sanitizedTitle}/extracted-products-all-pages.csv`;
+				mimeType = 'text/csv';
+			} else {
+				content = JSON.stringify(allProducts, null, 2);
+				fileName = `code-generated/${sanitizedTitle}/extracted-products-all-pages.json`;
+				mimeType = 'application/json';
+			}
+			
+			await saveFile({
+				content,
+				fileName,
+				mimeType,
+				tabId: currentTabId
 			});
 			
-			// Handle dropdown item clicks
-			const dropdownItems = obtainProductsDropdown.querySelectorAll('.dropdown-item');
-			dropdownItems.forEach(item => {
-				item.addEventListener('click', async (e) => {
-					e.preventDefault();
-					e.stopPropagation();
-					const format = (item as HTMLElement).dataset.format || 'json';
-					obtainProductsDropdown.classList.remove('show');
-					obtainProductsBtn.classList.remove('active');
+			debugLog('ScrapeAllPages', 'Process completed successfully');
+			if (wasStopped) {
+				buttonElement.textContent = `Stopped: ${allProducts.length} products from ${pagesProcessed} pages saved`;
+			} else {
+				buttonElement.textContent = `Completed: ${allProducts.length} products from ${pagesProcessed} pages`;
+			}
+			
+		} catch (error) {
+			console.error('Failed to scrape all pages:', error);
+			alert(getMessage('scrapeAllPagesError'));
+			buttonElement.textContent = getMessage('obtainProducts');
+		} finally {
+			buttonElement.classList.remove('processing');
+			buttonElement.disabled = false;
+			
+			// Hide stop button and show scrape button
+			if (stopScraperBtn) {
+				stopScraperBtn.style.display = 'none';
+				stopScraperBtn.disabled = false;
+			}
+			
+			// Re-enable other buttons
+			if (generateExtractorBtn) {
+				generateExtractorBtn.disabled = false;
+			}
+			setObtainProductsButtonsState(false);
+			
+			// Reset stop flag
+			shouldStopScraper = false;
+			
+			// Reset button text after a delay
+			setTimeout(() => {
+				buttonElement.textContent = getMessage('obtainProducts');
+			}, 3000);
+		}
+		}
+
+		// Setup dropdown functionality for obtain products button
+		const obtainProductsBtn = document.getElementById('obtain-products-btn') as HTMLButtonElement;
+		const obtainProductsMenuBtn = document.getElementById('obtain-products-menu-btn') as HTMLButtonElement;
+		const obtainProductsDropdown = document.getElementById('obtain-products-dropdown') as HTMLDivElement;
+		const scopeCurrentRadio = document.getElementById('scope-current') as HTMLInputElement;
+		const scopeAllRadio = document.getElementById('scope-all') as HTMLInputElement;
+		
+		if (obtainProductsBtn && obtainProductsMenuBtn && obtainProductsDropdown) {
+			// Main button executes action directly with JSON format
+			obtainProductsBtn.addEventListener('click', async (e) => {
+				// Don't execute if clicking on the menu button area
+				if ((e.target as HTMLElement).closest('.menu-btn')) {
+					return;
+				}
+				
+				e.preventDefault();
+				e.stopPropagation();
+				
+				const noteContentField = document.getElementById('note-content-field') as HTMLTextAreaElement;
+				const noteNameField = document.getElementById('note-name-field') as HTMLTextAreaElement;
+				if (noteContentField && noteNameField && currentTabId) {
+					const generateExtractorBtn = document.getElementById('generate-extractor-btn') as HTMLButtonElement;
+					const scope = scopeAllRadio?.checked ? 'all' : 'current';
 					
-					const noteContentField = document.getElementById('note-content-field') as HTMLTextAreaElement;
-					const noteNameField = document.getElementById('note-name-field') as HTMLTextAreaElement;
-					if (noteContentField && noteNameField && currentTabId) {
-						const saveJsonBtn = document.getElementById('save-json-btn') as HTMLButtonElement;
+					if (scope === 'current') {
+						// Handle current page scraping
 						try {
 							obtainProductsBtn.classList.add('processing');
 							obtainProductsBtn.textContent = getMessage('processing');
-							obtainProductsBtn.disabled = true;
+							setObtainProductsButtonsState(true);
 							
-							// Also disable the save JSON button
-							if (saveJsonBtn) {
-								saveJsonBtn.disabled = true;
+							// Also disable the generate extractor button
+							if (generateExtractorBtn) {
+								generateExtractorBtn.disabled = true;
 							}
 							
 							// Get current page URL
@@ -467,23 +865,13 @@ document.addEventListener('DOMContentLoaded', async function() {
 							debugLog('ObtainProducts', 'Executing saved parser code on HTML...');
 							const extractedProducts = await executeParserCode(savedCode, pageHtml, currentTabId);
 							
-							// Step 3: Save the result in the selected format
-							debugLog('ObtainProducts', `Saving ${format.toUpperCase()} result...`);
+							// Step 3: Save the result as JSON (default format)
+							debugLog('ObtainProducts', 'Saving JSON result...');
 							const sanitizedTitle = noteNameField.value.replace(/[\\/:*?"<>|]/g, '').trim() || 'untitled';
 							
-							let content: string;
-							let fileName: string;
-							let mimeType: string;
-							
-							if (format === 'csv') {
-								content = jsonToCsv(extractedProducts);
-								fileName = `code-generated/${sanitizedTitle}/extracted-products.csv`;
-								mimeType = 'text/csv';
-							} else {
-								content = JSON.stringify(extractedProducts, null, 2);
-								fileName = `code-generated/${sanitizedTitle}/extracted-products.json`;
-								mimeType = 'application/json';
-							}
+							const content = JSON.stringify(extractedProducts, null, 2);
+							const fileName = `code-generated/${sanitizedTitle}/extracted-products.json`;
+							const mimeType = 'application/json';
 							
 							await saveFile({
 								content,
@@ -499,12 +887,125 @@ document.addEventListener('DOMContentLoaded', async function() {
 						} finally {
 							obtainProductsBtn.classList.remove('processing');
 							obtainProductsBtn.textContent = getMessage('obtainProducts');
-							obtainProductsBtn.disabled = false;
+							setObtainProductsButtonsState(false);
 							
 							// Re-enable the save JSON button
-							if (saveJsonBtn) {
-								saveJsonBtn.disabled = false;
+							if (generateExtractorBtn) {
+								generateExtractorBtn.disabled = false;
 							}
+						}
+					} else {
+						// Handle all pages scraping with JSON format
+						await handleScrapeAllPages(obtainProductsBtn, 'json', noteNameField, generateExtractorBtn);
+					}
+				}
+			});
+			
+			// Toggle dropdown on menu button click
+			obtainProductsMenuBtn.addEventListener('click', (e) => {
+				e.preventDefault();
+				e.stopPropagation();
+				obtainProductsDropdown.classList.toggle('show');
+				obtainProductsMenuBtn.classList.toggle('active');
+			});
+			
+			// Handle dropdown item clicks
+			const dropdownItems = obtainProductsDropdown.querySelectorAll('.dropdown-item');
+			dropdownItems.forEach(item => {
+				item.addEventListener('click', async (e) => {
+					e.preventDefault();
+					e.stopPropagation();
+					const format = (item as HTMLElement).dataset.format || 'json';
+					obtainProductsDropdown.classList.remove('show');
+					obtainProductsMenuBtn.classList.remove('active');
+					
+					// Determine scope from radio buttons
+					const scope = scopeAllRadio?.checked ? 'all' : 'current';
+					
+					const noteContentField = document.getElementById('note-content-field') as HTMLTextAreaElement;
+					const noteNameField = document.getElementById('note-name-field') as HTMLTextAreaElement;
+					if (noteContentField && noteNameField && currentTabId) {
+						const generateExtractorBtn = document.getElementById('generate-extractor-btn') as HTMLButtonElement;
+						
+						if (scope === 'current') {
+							// Handle current page scraping
+							try {
+								obtainProductsBtn.classList.add('processing');
+								obtainProductsBtn.textContent = getMessage('processing');
+								setObtainProductsButtonsState(true);
+								
+								// Also disable the generate extractor button
+								if (generateExtractorBtn) {
+									generateExtractorBtn.disabled = true;
+								}
+								
+								// Get current page URL
+								const tab = await getTabInfo(currentTabId);
+								const pageUrl = tab.url;
+								
+								// Extract HTML content from the page
+								debugLog('ObtainProducts', 'Extracting HTML content from page...');
+								const contentResponse = await extractPageContent(currentTabId);
+								if (!contentResponse || !contentResponse.fullHtml) {
+									throw new Error('Failed to extract HTML content from page');
+								}
+								// Use selectedHtml if available (user selection), otherwise use fullHtml
+								const pageHtml = contentResponse.selectedHtml || contentResponse.fullHtml;
+								
+								// Step 1: Load saved parser code for this URL
+								debugLog('ObtainProducts', 'Loading saved parser code...');
+								const savedCode = await loadSavedParserCode(pageUrl);
+								
+								if (!savedCode) {
+									throw new Error('No saved parser code found for this page. Please use "Save JSON" first to generate the parser code.');
+								}
+								
+								// Step 2: Execute the saved code on the HTML content
+								debugLog('ObtainProducts', 'Executing saved parser code on HTML...');
+								const extractedProducts = await executeParserCode(savedCode, pageHtml, currentTabId);
+								
+								// Step 3: Save the result in the selected format
+								debugLog('ObtainProducts', `Saving ${format.toUpperCase()} result...`);
+								const sanitizedTitle = noteNameField.value.replace(/[\\/:*?"<>|]/g, '').trim() || 'untitled';
+								
+								let content: string;
+								let fileName: string;
+								let mimeType: string;
+								
+								if (format === 'csv') {
+									content = jsonToCsv(extractedProducts);
+									fileName = `code-generated/${sanitizedTitle}/extracted-products.csv`;
+									mimeType = 'text/csv';
+								} else {
+									content = JSON.stringify(extractedProducts, null, 2);
+									fileName = `code-generated/${sanitizedTitle}/extracted-products.json`;
+									mimeType = 'application/json';
+								}
+								
+								await saveFile({
+									content,
+									fileName,
+									mimeType,
+									tabId: currentTabId
+								});
+								
+								debugLog('ObtainProducts', 'Process completed successfully');
+							} catch (error) {
+								console.error('Failed to obtain products:', error);
+								alert(getMessage('obtainProductsError'));
+							} finally {
+								obtainProductsBtn.classList.remove('processing');
+								obtainProductsBtn.textContent = getMessage('obtainProducts');
+								setObtainProductsButtonsState(false);
+								
+								// Re-enable the generate extractor button
+								if (generateExtractorBtn) {
+									generateExtractorBtn.disabled = false;
+								}
+							}
+						} else {
+							// Handle all pages scraping (reuse scrape all pages logic)
+							await handleScrapeAllPages(obtainProductsBtn, format, noteNameField, generateExtractorBtn);
 						}
 					}
 				});
@@ -512,11 +1013,16 @@ document.addEventListener('DOMContentLoaded', async function() {
 			
 			// Close dropdown when clicking outside
 			document.addEventListener('click', (e) => {
-				if (!obtainProductsBtn.contains(e.target as Node) && !obtainProductsDropdown.contains(e.target as Node)) {
+				if (!obtainProductsBtn.contains(e.target as Node) && 
+					!obtainProductsMenuBtn.contains(e.target as Node) && 
+					!obtainProductsDropdown.contains(e.target as Node)) {
 					obtainProductsDropdown.classList.remove('show');
-					obtainProductsBtn.classList.remove('active');
+					obtainProductsMenuBtn.classList.remove('active');
 				}
 			});
+			
+			// Initialize icons for the menu button
+			initializeIcons(obtainProductsMenuBtn);
 		}
 
 		/**
@@ -1042,341 +1548,6 @@ document.addEventListener('DOMContentLoaded', async function() {
 			});
 		}
 
-		// Setup dropdown functionality for scrape all pages button
-		const scrapeAllPagesBtn = document.getElementById('scrape-all-pages-btn') as HTMLButtonElement;
-		const scrapeAllDropdown = document.getElementById('scrape-all-dropdown') as HTMLDivElement;
-		if (scrapeAllPagesBtn && scrapeAllDropdown) {
-			// Toggle dropdown on button click
-			scrapeAllPagesBtn.addEventListener('click', (e) => {
-				e.preventDefault();
-				e.stopPropagation();
-				scrapeAllDropdown.classList.toggle('show');
-				scrapeAllPagesBtn.classList.toggle('active');
-				
-				// Close other dropdowns
-				const obtainProductsDropdown = document.getElementById('obtain-products-dropdown');
-				const obtainProductsBtn = document.getElementById('obtain-products-btn');
-				if (obtainProductsDropdown && obtainProductsBtn) {
-					obtainProductsDropdown.classList.remove('show');
-					obtainProductsBtn.classList.remove('active');
-				}
-			});
-			
-			// Handle dropdown item clicks
-			const dropdownItems = scrapeAllDropdown.querySelectorAll('.dropdown-item');
-			dropdownItems.forEach(item => {
-				item.addEventListener('click', async (e) => {
-					e.preventDefault();
-					e.stopPropagation();
-					const format = (item as HTMLElement).dataset.format || 'json';
-					scrapeAllDropdown.classList.remove('show');
-					scrapeAllPagesBtn.classList.remove('active');
-					
-					const noteContentField = document.getElementById('note-content-field') as HTMLTextAreaElement;
-					const noteNameField = document.getElementById('note-name-field') as HTMLTextAreaElement;
-					if (noteContentField && noteNameField && currentTabId) {
-						const saveJsonBtn = document.getElementById('save-json-btn') as HTMLButtonElement;
-						const obtainProductsBtn = document.getElementById('obtain-products-btn') as HTMLButtonElement;
-						
-						// Reset stop flag
-						shouldStopScraper = false;
-						
-						// Show stop button and reset its text
-						const stopScraperBtn = document.getElementById('stop-scraper-btn') as HTMLButtonElement;
-						if (stopScraperBtn) {
-							stopScraperBtn.style.display = 'block';
-							stopScraperBtn.disabled = false;
-							stopScraperBtn.textContent = getMessage('stopScraperAndSave');
-						}
-						
-						try {
-							scrapeAllPagesBtn.classList.add('processing');
-							scrapeAllPagesBtn.disabled = true;
-							
-							// Also disable other buttons
-							if (saveJsonBtn) {
-								saveJsonBtn.disabled = true;
-							}
-							if (obtainProductsBtn) {
-								obtainProductsBtn.disabled = true;
-							}
-							
-							// Get current page URL
-							const tab = await getTabInfo(currentTabId);
-							const baseUrl = tab.url;
-							
-							// Load saved parser code
-							debugLog('ScrapeAllPages', 'Loading saved parser code...');
-							const savedCode = await loadSavedParserCode(baseUrl);
-							
-							if (!savedCode) {
-								throw new Error('No saved parser code found for this page. Please use "Generate Code and Save" first to generate the parser code.');
-							}
-						
-						// Extract base URL and detect current page
-						const urlObj = new URL(baseUrl);
-						
-						// Read user preference for pagination parameter
-						const usePaginaParamCheckbox = document.getElementById('use-pagina-param') as HTMLInputElement;
-						const usePaginaParam = usePaginaParamCheckbox ? usePaginaParamCheckbox.checked : false;
-						
-						// Detect current page number from URL
-						let startPageNumber = 1;
-						const pageParamName = usePaginaParam ? 'pagina' : 'page';
-						const currentPageParam = urlObj.searchParams.get(pageParamName);
-						
-						if (currentPageParam) {
-							const parsedPage = parseInt(currentPageParam, 10);
-							if (!isNaN(parsedPage) && parsedPage > 0) {
-								startPageNumber = parsedPage;
-								debugLog('ScrapeAllPages', `Detected current page from URL: ${startPageNumber}`);
-							}
-						} else {
-							// Check the other parameter name as fallback
-							const fallbackParamName = usePaginaParam ? 'page' : 'pagina';
-							const fallbackPageParam = urlObj.searchParams.get(fallbackParamName);
-							if (fallbackPageParam) {
-								const parsedPage = parseInt(fallbackPageParam, 10);
-								if (!isNaN(parsedPage) && parsedPage > 0) {
-									startPageNumber = parsedPage;
-									debugLog('ScrapeAllPages', `Detected current page from fallback parameter: ${startPageNumber}`);
-								}
-							}
-						}
-						
-						// Remove any existing pagination parameters to get base URL
-						urlObj.searchParams.delete('pagina');
-						urlObj.searchParams.delete('page');
-						const baseUrlWithoutPagination = urlObj.toString();
-						
-						// Read user preference for maximum pages
-						const maxPagesInput = document.getElementById('max-pages-input') as HTMLInputElement;
-						const maxPagesToScrape = maxPagesInput ? parseInt(maxPagesInput.value, 10) || 500 : 500;
-						
-						// Calculate the maximum page number (startPage + maxPagesToScrape - 1)
-						// If starting at page 12 and maxPagesToScrape is 3, we scrape pages 12, 13, 14
-						const maxPageNumber = startPageNumber + maxPagesToScrape - 1;
-						
-						const allProducts: any[] = [];
-						let pageNumber = startPageNumber;
-						let hasMorePages = true;
-						
-						// First, scrape the current page
-						try {
-							// Update button text
-							scrapeAllPagesBtn.textContent = `${getMessage('processing')}...${pageNumber}`;
-							
-							debugLog('ScrapeAllPages', `Processing current page (page ${pageNumber})...`);
-							
-							// Get current page HTML
-							debugLog('ScrapeAllPages', 'Extracting current page HTML...');
-							const contentResponse = await extractPageContent(currentTabId);
-							if (!contentResponse || (!contentResponse.fullHtml && !contentResponse.selectedHtml)) {
-								throw new Error('Failed to extract current page HTML');
-							}
-							// Use selectedHtml if available (user selection), otherwise use fullHtml
-							const currentPageHtml = contentResponse.selectedHtml || contentResponse.fullHtml;
-							debugLog('ScrapeAllPages', 'HTML extraction successful');
-							
-							// Execute parser code on the HTML content
-							const extractedProducts = await executeParserCode(savedCode, currentPageHtml, currentTabId);
-							
-							// Check if we got products
-							if (!extractedProducts || extractedProducts.length === 0) {
-								debugLog('ScrapeAllPages', `No products found on current page, stopping.`);
-								hasMorePages = false;
-							} else {
-								// Add products to the accumulated list
-								allProducts.push(...extractedProducts);
-								debugLog('ScrapeAllPages', `Current page: Found ${extractedProducts.length} products. Total so far: ${allProducts.length}`);
-								
-								// Move to next page
-								pageNumber++;
-							}
-						} catch (pageError) {
-							console.error(`Error processing current page:`, pageError);
-							throw pageError;
-						}
-						
-						// Now iterate through remaining pages
-						let consecutiveFailures = 0;
-						const maxConsecutiveFailures = 2; // Allow 2 consecutive failures before stopping
-						
-						while (hasMorePages && pageNumber <= maxPageNumber && !shouldStopScraper) { // User-configurable limit
-							try {
-								// Check if user wants to stop
-								if (shouldStopScraper) {
-									debugLog('ScrapeAllPages', 'User requested to stop scraper');
-									break;
-								}
-								
-								// Update button text
-								scrapeAllPagesBtn.textContent = `${getMessage('processing')}...${pageNumber}`;
-								
-								// Build URL for this page
-								const pageUrl = buildPaginationUrl(baseUrlWithoutPagination, pageNumber, usePaginaParam);
-								
-								debugLog('ScrapeAllPages', `Processing page ${pageNumber}: ${pageUrl}`);
-								
-								// Navigate to the page and extract HTML - retry up to 3 times
-								let pageHtml: string | null = null;
-								let navigationSuccess = false;
-								
-								for (let navAttempt = 0; navAttempt < 3; navAttempt++) {
-									try {
-										// Complete flow: navigate -> get HTML
-										pageHtml = await navigateAndExtractHtml(currentTabId, pageUrl);
-										navigationSuccess = true;
-										debugLog('ScrapeAllPages', `Navigation and HTML extraction successful (attempt ${navAttempt + 1})`);
-										break;
-									} catch (navError) {
-										console.warn(`Navigation/HTML extraction attempt ${navAttempt + 1} failed for page ${pageNumber}:`, navError);
-										if (navAttempt < 2) {
-											await new Promise(resolve => setTimeout(resolve, 2000));
-										}
-									}
-								}
-								
-								if (!navigationSuccess || !pageHtml) {
-									throw new Error(`Failed to navigate to page ${pageNumber} and extract HTML after multiple attempts`);
-								}
-								
-								// Execute parser code on the HTML content
-								const extractedProducts = await executeParserCode(savedCode, pageHtml, currentTabId);
-								
-								// Check if we got products
-								if (!extractedProducts || extractedProducts.length === 0) {
-									debugLog('ScrapeAllPages', `No products found on page ${pageNumber}`);
-									consecutiveFailures++;
-									
-									if (consecutiveFailures >= maxConsecutiveFailures) {
-										debugLog('ScrapeAllPages', `Stopping after ${consecutiveFailures} consecutive pages with no products`);
-										hasMorePages = false;
-										break;
-									}
-									
-									// Try next page even if this one had no products
-									pageNumber++;
-									await new Promise(resolve => setTimeout(resolve, 1000));
-									continue;
-								}
-								
-								// Reset failure counter on success
-								consecutiveFailures = 0;
-								
-								// Add products to the accumulated list
-								allProducts.push(...extractedProducts);
-								debugLog('ScrapeAllPages', `Page ${pageNumber}: Found ${extractedProducts.length} products. Total so far: ${allProducts.length}`);
-								
-								// Move to next page
-								pageNumber++;
-								
-								// Small delay between pages to avoid overwhelming the server
-								await new Promise(resolve => setTimeout(resolve, 1500));
-								
-								// Check again if user wants to stop after delay
-								if (shouldStopScraper) {
-									debugLog('ScrapeAllPages', 'User requested to stop scraper after delay');
-									break;
-								}
-								
-							} catch (pageError) {
-								console.error(`Error processing page ${pageNumber}:`, pageError);
-								consecutiveFailures++;
-								
-								if (consecutiveFailures >= maxConsecutiveFailures) {
-									debugLog('ScrapeAllPages', `Stopping after ${consecutiveFailures} consecutive errors`);
-									hasMorePages = false;
-									break;
-								}
-								
-								// Try next page even if this one failed
-								debugLog('ScrapeAllPages', `Retrying next page after error (failure ${consecutiveFailures}/${maxConsecutiveFailures})`);
-								pageNumber++;
-								await new Promise(resolve => setTimeout(resolve, 2000));
-							}
-						}
-						
-						// Save the accumulated results in the selected format
-						const wasStopped = shouldStopScraper;
-						const pagesProcessed = wasStopped ? pageNumber - 1 : pageNumber - 1;
-						debugLog('ScrapeAllPages', `Saving results: ${allProducts.length} total products from ${pagesProcessed} pages${wasStopped ? ' (stopped by user)' : ''}`);
-						const sanitizedTitle = noteNameField.value.replace(/[\\/:*?"<>|]/g, '').trim() || 'untitled';
-						
-						let content: string;
-						let fileName: string;
-						let mimeType: string;
-						
-						if (format === 'csv') {
-							content = jsonToCsv(allProducts);
-							fileName = `code-generated/${sanitizedTitle}/extracted-products-all-pages.csv`;
-							mimeType = 'text/csv';
-						} else {
-							content = JSON.stringify(allProducts, null, 2);
-							fileName = `code-generated/${sanitizedTitle}/extracted-products-all-pages.json`;
-							mimeType = 'application/json';
-						}
-						
-						await saveFile({
-							content,
-							fileName,
-							mimeType,
-							tabId: currentTabId
-						});
-						
-						debugLog('ScrapeAllPages', 'Process completed successfully');
-						if (wasStopped) {
-							scrapeAllPagesBtn.textContent = `Stopped: ${allProducts.length} products from ${pagesProcessed} pages saved`;
-						} else {
-							scrapeAllPagesBtn.textContent = `Completed: ${allProducts.length} products from ${pagesProcessed} pages`;
-						}
-						
-					} catch (error) {
-						console.error('Failed to scrape all pages:', error);
-						alert(getMessage('scrapeAllPagesError'));
-						scrapeAllPagesBtn.textContent = getMessage('scrapeAllPages');
-					} finally {
-						scrapeAllPagesBtn.classList.remove('processing');
-						scrapeAllPagesBtn.disabled = false;
-						
-						// Hide stop button and show scrape button
-						const stopScraperBtn = document.getElementById('stop-scraper-btn') as HTMLButtonElement;
-						if (stopScraperBtn) {
-							stopScraperBtn.style.display = 'none';
-							stopScraperBtn.disabled = false;
-						}
-						
-						// Re-enable other buttons
-						if (saveJsonBtn) {
-							saveJsonBtn.disabled = false;
-						}
-						if (obtainProductsBtn) {
-							obtainProductsBtn.disabled = false;
-						}
-						
-						// Reset stop flag
-						shouldStopScraper = false;
-						
-						// Reset button text after a delay
-						setTimeout(() => {
-							scrapeAllPagesBtn.textContent = getMessage('scrapeAllPages');
-						}, 3000);
-					}
-				}
-			});
-		});
-		
-		// Close dropdown when clicking outside
-		if (scrapeAllPagesBtn && scrapeAllDropdown) {
-			document.addEventListener('click', (e) => {
-				if (!scrapeAllPagesBtn.contains(e.target as Node) && !scrapeAllDropdown.contains(e.target as Node)) {
-					scrapeAllDropdown.classList.remove('show');
-					scrapeAllPagesBtn.classList.remove('active');
-				}
-			});
-		}
-		}
-
 		// Add event listener for stop scraper button
 		const stopScraperBtn = document.getElementById('stop-scraper-btn') as HTMLButtonElement;
 		if (stopScraperBtn) {
@@ -1576,10 +1747,23 @@ function setupEventListeners(tabId: number) {
 }
 
 async function initializeUI() {
-	// Focus is now on save-json-btn
-	const saveJsonBtn = document.getElementById('save-json-btn');
-	if (saveJsonBtn) {
-		saveJsonBtn.focus();
+	// Check extractor status and update UI
+	if (currentTabId) {
+		try {
+			const tab = await getTabInfo(currentTabId);
+			if (tab && tab.url && isValidUrl(tab.url) && !isBlankPage(tab.url)) {
+				const status = await checkExtractorStatus(tab.url);
+				await updateExtractorUI(status.hasExtractor, status.isValid);
+			}
+		} catch (error) {
+			console.error('Error checking extractor status on initialization:', error);
+		}
+	}
+	
+	// Focus is now on generate-extractor-btn
+	const generateExtractorBtn = document.getElementById('generate-extractor-btn');
+	if (generateExtractorBtn) {
+		generateExtractorBtn.focus();
 	}
 
 	// Removed: show variables button and variables panel

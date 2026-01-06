@@ -838,6 +838,18 @@
 	"obtainProducts": {
 		"message": "Obtain Products"
 	},
+	"generateExtractor": {
+		"message": "Generate extractor"
+	},
+	"regenerateExtractor": {
+		"message": "Regenerate extractor"
+	},
+	"extractorReady": {
+		"message": "✓ Extractor ready for this page"
+	},
+	"firstGenerateExtractor": {
+		"message": "First generate the extractor for this page"
+	},
 	"obtainProductsError": {
 		"message": "Failed to obtain products. Check console for details."
 	},
@@ -867,5 +879,17 @@
 	},
 	"saveAsCsv": {
 		"message": "Save as CSV"
+	},
+	"obtainFrom": {
+		"message": "Obtain from:"
+	},
+	"currentPage": {
+		"message": "Current page"
+	},
+	"allPages": {
+		"message": "All pages"
+	},
+	"advancedSettings": {
+		"message": "Advanced Settings"
 	}
 }

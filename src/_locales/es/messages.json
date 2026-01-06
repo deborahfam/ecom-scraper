@@ -837,6 +837,18 @@
 	"generateCodeAndSave": {
 		"message": "Generar Código y Guardar"
 	},
+	"generateExtractor": {
+		"message": "Generar extractor"
+	},
+	"regenerateExtractor": {
+		"message": "Regenerar extractor"
+	},
+	"extractorReady": {
+		"message": "✓ Extractor listo para esta página"
+	},
+	"firstGenerateExtractor": {
+		"message": "Primero genera el extractor para esta página"
+	},
 	"saveJsonSuccess": {
 		"message": "JSON guardado exitosamente"
 	},
@@ -875,5 +887,17 @@
 	},
 	"saveAsCsv": {
 		"message": "Guardar como CSV"
+	},
+	"obtainFrom": {
+		"message": "Obtener desde:"
+	},
+	"currentPage": {
+		"message": "Página actual"
+	},
+	"allPages": {
+		"message": "Todas las páginas"
+	},
+	"advancedSettings": {
+		"message": "Configuración avanzada"
 	}
 }

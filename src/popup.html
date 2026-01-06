@@ -18,43 +18,55 @@
 			<div class="clipper-footer">
 				<!-- Main Actions Group -->
 				<div class="action-group main-actions">
-					<button id="save-json-btn" class="btn-primary btn-orange" data-i18n="generateCodeAndSave">Generar Código y Guardar</button>
-					<div class="dropdown-container">
-						<button id="obtain-products-btn" class="btn-secondary btn-black dropdown-btn" data-i18n="obtainProducts">Obtain Products</button>
+					<button id="generate-extractor-btn" class="btn-primary btn-orange" data-i18n="generateExtractor">Generar extractor</button>
+					<div id="extractor-status-message" class="extractor-status-message" style="display: none;"></div>
+				</div>
+				
+				<!-- Obtain Products Group -->
+				<div class="action-group obtain-products-group">
+					<div class="action-buttons">
+						<button id="obtain-products-btn" class="btn-primary btn-orange btn-large" data-i18n="obtainProducts" disabled>Obtener productos</button>
+						<div class="menu-btn">
+							<button id="obtain-products-menu-btn"><i data-lucide="chevron-down"></i></button>
+						</div>
 						<div class="dropdown-menu" id="obtain-products-dropdown">
 							<button class="dropdown-item" data-format="json" data-i18n="saveAsJson">Guardar como JSON</button>
 							<button class="dropdown-item" data-format="csv" data-i18n="saveAsCsv">Guardar como CSV</button>
 						</div>
 					</div>
+					<button id="stop-scraper-btn" class="btn-secondary btn-black" style="display: none;" data-i18n="stopScraperAndSave">Detener y Guardar</button>
 				</div>
 				
-				<!-- Scraping Configuration Group -->
+				<!-- Scope Selection -->
+				<div class="action-group scope-selection">
+					<div class="scope-label" data-i18n="obtainFrom">Obtener desde:</div>
+					<div class="radio-group">
+						<label class="radio-option">
+							<input type="radio" name="scope" id="scope-current" value="current" checked>
+							<span data-i18n="currentPage">Página actual</span>
+						</label>
+						<label class="radio-option">
+							<input type="radio" name="scope" id="scope-all" value="all">
+							<span data-i18n="allPages">Todas las páginas</span>
+						</label>
+					</div>
+				</div>
+				
+				<!-- Advanced Configuration -->
 				<div class="action-group scraping-config">
 					<div class="config-header">
-						<span class="config-title" data-i18n="scrapingSettings">Scraping Settings</span>
+						<span class="config-title" data-i18n="advancedSettings">Configuración avanzada</span>
 					</div>
 					<div class="config-options">
-						<div class="config-option">
-							<input type="checkbox" id="use-pagina-param" class="config-checkbox">
-							<label for="use-pagina-param" class="config-label" data-i18n="usePaginaParam">Usar parámetro 'pagina' en lugar de 'page'</label>
-						</div>
 						<div class="config-option">
 							<label for="max-pages-input" class="config-label" data-i18n="maxPages">Máximo de páginas:</label>
 							<input type="number" id="max-pages-input" class="config-input" min="1" max="10000" value="500">
 						</div>
-					</div>
-				</div>
-				
-				<!-- Scrape All Pages Button -->
-				<div class="action-group scrape-all-group">
-					<div class="dropdown-container">
-						<button id="scrape-all-pages-btn" class="btn-primary btn-orange btn-large dropdown-btn" data-i18n="scrapeAllPages">Scrape All Pages</button>
-						<div class="dropdown-menu" id="scrape-all-dropdown">
-							<button class="dropdown-item" data-format="json" data-i18n="saveAsJson">Guardar como JSON</button>
-							<button class="dropdown-item" data-format="csv" data-i18n="saveAsCsv">Guardar como CSV</button>
+						<div class="config-option">
+							<input type="checkbox" id="use-pagina-param" class="config-checkbox">
+							<label for="use-pagina-param" class="config-label" data-i18n="usePaginaParam">Usar parámetro 'pagina' en lugar de 'page'</label>
 						</div>
 					</div>
-					<button id="stop-scraper-btn" class="btn-secondary btn-black" style="display: none;" data-i18n="stopScraperAndSave">Detener y Guardar</button>
 				</div>
 			</div>
 		</div>
