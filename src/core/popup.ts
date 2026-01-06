@@ -198,7 +198,7 @@ async function initializeExtension(tabId: number) {
 		// Setup message listeners
 		setupMessageListeners();
 
-		await checkHighlighterModeState(tabId);
+		// Removed: checkHighlighterModeState
 
 		return true;
 	} catch (error) {
@@ -324,26 +324,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 		browser.runtime.connect({ name: 'popup' });
 
 		// Setup event listeners for popup buttons
-		const refreshButton = document.getElementById('refresh-pane');
-		if (refreshButton) {
-			refreshButton.addEventListener('click', (e) => {
-				e.preventDefault();
-				refreshPopup();
-				initializeIcons(refreshButton);
-			});
-		}
-		const settingsButton = document.getElementById('open-settings');
-		if (settingsButton) {
-			settingsButton.addEventListener('click', async function() {
-				try {
-					await browser.runtime.sendMessage({ action: "openOptionsPage" });
-					setTimeout(() => window.close(), 50);
-				} catch (error) {
-					console.error('Error opening options page:', error);
-				}
-			});
-			initializeIcons(settingsButton);
-		}
+		// Removed: refresh button, settings button, and other header icons
 
 		const saveJsonBtn = document.getElementById('save-json-btn') as HTMLButtonElement;
 		if (saveJsonBtn) {
@@ -1154,21 +1135,14 @@ document.addEventListener('DOMContentLoaded', async function() {
 
 			try {
 				// DOM-dependent initializations
-				updateVaultDropdown(loadedSettings.vaults);
-				populateTemplateDropdown();
+				// Removed: updateVaultDropdown, populateTemplateDropdown
 				setupEventListeners(currentTabId);
 				await initializeUI();
 
 				// Initial content load
 				await refreshFields(currentTabId);
 
-				const showMoreActionsButton = document.getElementById('show-variables');
-				if (showMoreActionsButton) {
-					showMoreActionsButton.addEventListener('click', (e) => {
-						e.preventDefault();
-						showVariables();
-					});
-				}
+				// Removed: show variables button
 				// determineMainAction(); // Removed - action buttons no longer used
 			} catch (error) {
 				console.error('Error initializing popup:', error);
@@ -1184,13 +1158,8 @@ document.addEventListener('DOMContentLoaded', async function() {
 });
 
 function setupEventListeners(tabId: number) {
-	const templateDropdown = document.getElementById('template-select') as HTMLSelectElement;
-	if (templateDropdown) {
-		templateDropdown.addEventListener('change', function(this: HTMLSelectElement) {
-			handleTemplateChange(this.value);
-		});
-	}
-
+	// Removed: template dropdown, highlighter mode, embedded mode
+	
 	const noteNameField = document.getElementById('note-name-field') as HTMLTextAreaElement;
 	if (noteNameField) {
 		noteNameField.addEventListener('input', () => adjustNoteNameHeight(noteNameField));
@@ -1200,23 +1169,6 @@ function setupEventListeners(tabId: number) {
 			}
 		});
 	}
-
-	const highlighterModeButton = document.getElementById('highlighter-mode');
-	if (highlighterModeButton) {
-		highlighterModeButton.addEventListener('click', () => toggleHighlighterMode(tabId));
-	}
-
-	const embeddedModeButton = document.getElementById('embedded-mode');
-		if (embeddedModeButton) {
-			embeddedModeButton.addEventListener('click', async function() {
-				try {
-					await browser.runtime.sendMessage({ action: "getActiveTabAndToggleIframe" });
-					setTimeout(() => window.close(), 50);
-				} catch (error) {
-					console.error('Error toggling emedded iframe:', error);
-				}
-			});
-		}
 
 	const moreButton = document.getElementById('more-btn');
 	const moreDropdown = document.getElementById('more-dropdown');
@@ -1360,26 +1312,13 @@ function setupEventListeners(tabId: number) {
 }
 
 async function initializeUI() {
-	// Clip button removed - no longer needed
-	// Focus is now on save-json-btn or other visible buttons
+	// Focus is now on save-json-btn
 	const saveJsonBtn = document.getElementById('save-json-btn');
 	if (saveJsonBtn) {
 		saveJsonBtn.focus();
 	}
 
-	const showMoreActionsButton = document.getElementById('show-variables') as HTMLElement;
-	const variablesPanel = document.createElement('div');
-	variablesPanel.className = 'variables-panel';
-	document.body.appendChild(variablesPanel);
-
-	if (showMoreActionsButton) {
-		showMoreActionsButton.addEventListener('click', async (e) => {
-			e.preventDefault();
-			// Initialize the variables panel with the latest data
-			initializeVariablesPanel(variablesPanel, currentTemplate, currentVariables);
-			await showVariables();
-		});
-	}
+	// Removed: show variables button and variables panel
 
 	if (isSidePanel) {
 		browser.runtime.sendMessage({ action: "sidePanelOpened" });
