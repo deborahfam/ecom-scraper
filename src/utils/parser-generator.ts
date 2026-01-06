@@ -399,15 +399,16 @@ export async function generateAndSaveParser(sampleText: string, pageTitle: strin
 						debugLog('ParserGenerator', `Iteration ${iteration}: Validation passed! Found ${extractedProducts.length} products.`);
 						
 						// Save the code
-						const sanitizedTitle = pageTitle.replace(/[\\/:*?"<>|]/g, '').trim() || 'untitled';
-						const fileName = `code-generated/${sanitizedTitle}/generated-product-parser.js`;
-						
-						await saveFile({
-							content: parsedResponse.code,
-							fileName: fileName,
-							mimeType: 'text/javascript',
-							tabId
-						});
+						// Commented out: file saving to downloads disabled for now
+						// const sanitizedTitle = pageTitle.replace(/[\\/:*?"<>|]/g, '').trim() || 'untitled';
+						// const fileName = `code-generated/${sanitizedTitle}/generated-product-parser.js`;
+						// 
+						// await saveFile({
+						// 	content: parsedResponse.code,
+						// 	fileName: fileName,
+						// 	mimeType: 'text/javascript',
+						// 	tabId
+						// });
 						
 						const storageKey = `parser_code_${normalizeUrlForStorage(pageUrl)}`;
 						await browser.storage.local.set({
@@ -432,15 +433,16 @@ export async function generateAndSaveParser(sampleText: string, pageTitle: strin
 						} else {
 							console.warn(`Reached maximum iterations (${MAX_ITERATIONS}). Saving last generated code despite validation failure.`);
 							// Save anyway on last iteration
-							const sanitizedTitle = pageTitle.replace(/[\\/:*?"<>|]/g, '').trim() || 'untitled';
-							const fileName = `code-generated/${sanitizedTitle}/generated-product-parser.js`;
-							
-							await saveFile({
-								content: parsedResponse.code,
-								fileName: fileName,
-								mimeType: 'text/javascript',
-								tabId
-							});
+							// Commented out: file saving to downloads disabled for now
+							// const sanitizedTitle = pageTitle.replace(/[\\/:*?"<>|]/g, '').trim() || 'untitled';
+							// const fileName = `code-generated/${sanitizedTitle}/generated-product-parser.js`;
+							// 
+							// await saveFile({
+							// 	content: parsedResponse.code,
+							// 	fileName: fileName,
+							// 	mimeType: 'text/javascript',
+							// 	tabId
+							// });
 							
 							const storageKey = `parser_code_${normalizeUrlForStorage(pageUrl)}`;
 							await browser.storage.local.set({
@@ -470,15 +472,16 @@ export async function generateAndSaveParser(sampleText: string, pageTitle: strin
 			} else {
 				// No tabId provided, skip validation and save directly
 				debugLog('ParserGenerator', 'No tabId provided, skipping validation and saving code directly.');
-				const sanitizedTitle = pageTitle.replace(/[\\/:*?"<>|]/g, '').trim() || 'untitled';
-				const fileName = `code-generated/${sanitizedTitle}/generated-product-parser.js`;
-				
-				await saveFile({
-					content: parsedResponse.code,
-					fileName: fileName,
-					mimeType: 'text/javascript',
-					tabId
-				});
+				// Commented out: file saving to downloads disabled for now
+				// const sanitizedTitle = pageTitle.replace(/[\\/:*?"<>|]/g, '').trim() || 'untitled';
+				// const fileName = `code-generated/${sanitizedTitle}/generated-product-parser.js`;
+				// 
+				// await saveFile({
+				// 	content: parsedResponse.code,
+				// 	fileName: fileName,
+				// 	mimeType: 'text/javascript',
+				// 	tabId
+				// });
 				
 				const storageKey = `parser_code_${normalizeUrlForStorage(pageUrl)}`;
 				await browser.storage.local.set({
