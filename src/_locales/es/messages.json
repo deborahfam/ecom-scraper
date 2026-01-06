@@ -834,6 +834,9 @@
 	"saveJson": {
 		"message": "Guardar JSON"
 	},
+	"generateCodeAndSave": {
+		"message": "Generar Código y Guardar"
+	},
 	"saveJsonSuccess": {
 		"message": "JSON guardado exitosamente"
 	},

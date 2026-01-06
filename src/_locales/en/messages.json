@@ -826,6 +826,9 @@
 	"saveJson": {
 		"message": "Save JSON"
 	},
+	"generateCodeAndSave": {
+		"message": "Generate Code and Save"
+	},
 	"saveJsonSuccess": {
 		"message": "JSON saved successfully"
 	},

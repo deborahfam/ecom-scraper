@@ -240,12 +240,9 @@ async function loadAndSetupTemplates() {
 function setupMessageListeners() {
 	browser.runtime.onMessage.addListener((request: any, sender: browser.Runtime.MessageSender, sendResponse: (response?: any) => void) => {
 		if (request.action === "triggerQuickClip") {
-			handleSaveNote().then(() => {
-				sendResponse({success: true});
-			}).catch((error) => {
-				console.error('Error in handleSaveNote:', error);
-				sendResponse({success: false, error: error.message});
-			});
+			// Quick clip functionality removed - saveNote is no longer available
+			console.warn('Quick clip action is no longer supported - saveNote functionality has been removed');
+			sendResponse({success: false, error: 'Quick clip is no longer available'});
 			return true;
 		} else if (request.action === "tabUrlChanged") {
 			if (request.tabId === currentTabId) {
@@ -392,7 +389,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 						alert(getMessage('saveJsonError'));
 					} finally {
 						saveJsonBtn.classList.remove('processing');
-						saveJsonBtn.textContent = getMessage('saveJson');
+						saveJsonBtn.textContent = getMessage('generateCodeAndSave');
 						saveJsonBtn.disabled = false;
 					}
 				}
@@ -476,7 +473,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 						showVariables();
 					});
 				}
-				determineMainAction();
+				// determineMainAction(); // Removed - action buttons no longer used
 			} catch (error) {
 				console.error('Error initializing popup:', error);
 				showError(getMessage('pleaseReload'));
@@ -667,11 +664,11 @@ function setupEventListeners(tabId: number) {
 }
 
 async function initializeUI() {
-	const clipButton = document.getElementById('clip-btn');
-	if (clipButton) {
-		clipButton.focus();
-	} else {
-		console.warn('Clip button not found');
+	// Clip button removed - no longer needed
+	// Focus is now on save-json-btn or other visible buttons
+	const saveJsonBtn = document.getElementById('save-json-btn');
+	if (saveJsonBtn) {
+		saveJsonBtn.focus();
 	}
 
 	const showMoreActionsButton = document.getElementById('show-variables') as HTMLElement;
@@ -1208,17 +1205,7 @@ export async function copyToClipboard(content: string) {
 		const tabInfo = await getCurrentTabInfo();
 		await incrementStat('copyToClipboard', vault, path, tabInfo.url, tabInfo.title);
 
-		// Change the main button text temporarily
-		const clipButton = document.getElementById('clip-btn');
-		if (clipButton) {
-			const originalText = clipButton.textContent || getMessage('saveNote');
-			clipButton.textContent = getMessage('copied');
-			
-			// Reset the text after 1.5 seconds
-			setTimeout(() => {
-				clipButton.textContent = originalText;
-			}, 1500);
-		}
+		// Clip button removed - no longer showing copied status
 	} catch (error) {
 		console.error('Failed to copy to clipboard:', error);
 		showError('failedToCopyText');
@@ -1269,39 +1256,40 @@ async function handleSaveToDownloads() {
 	}
 }
 
-function determineMainAction() {
-	const mainButton = document.getElementById('clip-btn');
-	const moreDropdown = document.getElementById('more-dropdown');
-	const secondaryActions = moreDropdown?.querySelector('.secondary-actions');
-	if (!mainButton || !secondaryActions) return;
+// Removed determineMainAction() - action buttons (clip-btn, saveNote, etc.) are no longer used
+// function determineMainAction() {
+// 	const mainButton = document.getElementById('clip-btn');
+// 	const moreDropdown = document.getElementById('more-dropdown');
+// 	const secondaryActions = moreDropdown?.querySelector('.secondary-actions');
+// 	if (!mainButton || !secondaryActions) return;
 
-	// Clear existing secondary actions
-	secondaryActions.textContent = '';
+// 	// Clear existing secondary actions
+// 	secondaryActions.textContent = '';
 
-	// Set up actions based on saved behavior
-	switch (loadedSettings.saveBehavior) {
-		case 'copyToClipboard':
-			mainButton.textContent = getMessage('copyToClipboard');
-			mainButton.onclick = () => copyContent();
-			// Add direct actions to secondary
-			addSecondaryAction(secondaryActions, 'saveNote', () => handleSaveNote());
-			addSecondaryAction(secondaryActions, 'saveFile', handleSaveToDownloads);
-			break;
-		case 'saveFile':
-			mainButton.textContent = getMessage('saveFile');
-			mainButton.onclick = () => handleSaveToDownloads();
-			// Add direct actions to secondary
-			addSecondaryAction(secondaryActions, 'saveNote', () => handleSaveNote());
-			addSecondaryAction(secondaryActions, 'copyToClipboard', copyContent);
-			break;
-		default: // 'saveNote'
-			mainButton.textContent = getMessage('saveNote');
-			mainButton.onclick = () => handleSaveNote();
-			// Add direct actions to secondary
-			addSecondaryAction(secondaryActions, 'copyToClipboard', copyContent);
-			addSecondaryAction(secondaryActions, 'saveFile', handleSaveToDownloads);
-	}
-}
+// 	// Set up actions based on saved behavior
+// 	switch (loadedSettings.saveBehavior) {
+// 		case 'copyToClipboard':
+// 			mainButton.textContent = getMessage('copyToClipboard');
+// 			mainButton.onclick = () => copyContent();
+// 			// Add direct actions to secondary
+// 			addSecondaryAction(secondaryActions, 'saveNote', () => handleSaveNote());
+// 			addSecondaryAction(secondaryActions, 'saveFile', handleSaveToDownloads);
+// 			break;
+// 		case 'saveFile':
+// 			mainButton.textContent = getMessage('saveFile');
+// 			mainButton.onclick = () => handleSaveToDownloads();
+// 			// Add direct actions to secondary
+// 			addSecondaryAction(secondaryActions, 'saveNote', () => handleSaveNote());
+// 			addSecondaryAction(secondaryActions, 'copyToClipboard', copyContent);
+// 			break;
+// 		default: // 'saveNote'
+// 			mainButton.textContent = getMessage('saveNote');
+// 			mainButton.onclick = () => handleSaveNote();
+// 			// Add direct actions to secondary
+// 			addSecondaryAction(secondaryActions, 'copyToClipboard', copyContent);
+// 			addSecondaryAction(secondaryActions, 'saveFile', handleSaveToDownloads);
+// 	}
+// }
 
 async function handleSaveNote(): Promise<void> {
 	if (!currentTemplate) return;
