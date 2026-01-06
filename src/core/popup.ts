@@ -471,6 +471,622 @@ document.addEventListener('DOMContentLoaded', async function() {
 			});
 		}
 
+		/**
+		 * Builds a URL with pagination parameter
+		 * Always uses 'page' parameter (usePaginaParam should always be false)
+		 */
+		function buildPaginationUrl(baseUrl: string, pageNumber: number, usePaginaParam: boolean): string {
+			try {
+				const url = new URL(baseUrl);
+				
+				if (usePaginaParam) {
+					url.searchParams.set('pagina', pageNumber.toString());
+				} else {
+					url.searchParams.set('page', pageNumber.toString());
+				}
+				
+				return url.toString();
+			} catch (error) {
+				console.error('Error building pagination URL:', error);
+				// Fallback: simple string replacement
+				const paramName = usePaginaParam ? 'pagina' : 'page';
+				if (baseUrl.includes(`${paramName}=`)) {
+					return baseUrl.replace(new RegExp(`${paramName}=\\d+`), `${paramName}=${pageNumber}`);
+				} else {
+					const separator = baseUrl.includes('?') ? '&' : '?';
+					return `${baseUrl}${separator}${paramName}=${pageNumber}`;
+				}
+			}
+		}
+
+		/**
+		 * Normalizes URLs for comparison (removes trailing slashes, normalizes query params)
+		 */
+		function normalizeUrlForComparison(url: string): string {
+			try {
+				const urlObj = new URL(url);
+				// Sort query parameters for consistent comparison
+				const sortedParams = Array.from(urlObj.searchParams.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+				urlObj.search = '';
+				sortedParams.forEach(([key, value]) => {
+					urlObj.searchParams.append(key, value);
+				});
+				return urlObj.toString().replace(/\/$/, '');
+			} catch {
+				return url.replace(/\/$/, '');
+			}
+		}
+
+		/**
+		 * Navigates to a URL and waits for it to load, then extracts page content
+		 */
+		async function navigateAndExtractContent(tabId: number, url: string): Promise<string> {
+			return new Promise((resolve, reject) => {
+				let timeoutId: number | null = null;
+				let resolved = false;
+				const normalizedTargetUrl = normalizeUrlForComparison(url);
+				
+				debugLog('NavigateAndExtract', `Navigating to: ${url}`);
+				
+				// Set a timeout to prevent infinite waiting
+				const maxWaitTime = 30000; // 30 seconds max
+				timeoutId = window.setTimeout(() => {
+					if (!resolved) {
+						resolved = true;
+						browser.tabs.onUpdated.removeListener(onUpdatedListener);
+						reject(new Error(`Timeout waiting for page to load: ${url}`));
+					}
+				}, maxWaitTime);
+				
+				// Wait for the page to load using tabs.onUpdated listener approach
+				const onUpdatedListener = async (updatedTabId: number, changeInfo: browser.Tabs.OnUpdatedChangeInfoType, updatedTab: browser.Tabs.Tab | undefined) => {
+					if (updatedTabId !== tabId) return;
+					
+					// Check if page is loading
+					if (changeInfo.status === 'loading') {
+						debugLog('NavigateAndExtract', `Page ${updatedTabId} is loading...`);
+						return;
+					}
+					
+					// Check if page is complete
+					if (changeInfo.status === 'complete' && updatedTab) {
+						const currentUrl = updatedTab.url || '';
+						const normalizedCurrentUrl = normalizeUrlForComparison(currentUrl);
+						
+						debugLog('NavigateAndExtract', `Page ${updatedTabId} complete. Current URL: ${currentUrl}, Target: ${url}`);
+						
+						// Check if URLs match (allowing for slight differences)
+						if (normalizedCurrentUrl === normalizedTargetUrl || currentUrl.includes(url.split('?')[0])) {
+							// Remove the listener
+							browser.tabs.onUpdated.removeListener(onUpdatedListener);
+							
+							if (resolved) return;
+							resolved = true;
+							
+							if (timeoutId) {
+								clearTimeout(timeoutId);
+							}
+							
+							debugLog('NavigateAndExtract', 'URLs match, waiting for content script...');
+							
+							// Wait a bit more for content script and DOM to be ready
+							setTimeout(async () => {
+								try {
+									// Ensure content script is loaded - try multiple times
+									let contentScriptReady = false;
+									for (let attempt = 0; attempt < 5; attempt++) {
+										try {
+											await browser.runtime.sendMessage({ 
+												action: "sendMessageToTab", 
+												tabId: tabId, 
+												message: { action: "ping" }
+											});
+											contentScriptReady = true;
+											debugLog('NavigateAndExtract', `Content script ready (attempt ${attempt + 1})`);
+											break;
+										} catch (pingError) {
+											debugLog('NavigateAndExtract', `Content script ping failed (attempt ${attempt + 1}), injecting...`);
+											try {
+												await browser.scripting.executeScript({
+													target: { tabId: tabId },
+													files: ['content.js']
+												});
+												// Wait after injection
+												await new Promise(resolve => setTimeout(resolve, 1500));
+											} catch (injectError) {
+												console.warn('Content script injection failed:', injectError);
+											}
+										}
+									}
+									
+									if (!contentScriptReady) {
+										debugLog('NavigateAndExtract', 'Content script not ready after attempts, trying to extract anyway...');
+									}
+									
+									// Extract page content - try multiple times
+									let contentResponse = null;
+									for (let attempt = 0; attempt < 3; attempt++) {
+										try {
+											contentResponse = await extractPageContent(tabId);
+											if (contentResponse && contentResponse.content) {
+												debugLog('NavigateAndExtract', `Content extracted successfully (attempt ${attempt + 1})`);
+												break;
+											}
+										} catch (extractError) {
+											console.warn(`Content extraction attempt ${attempt + 1} failed:`, extractError);
+											if (attempt < 2) {
+												await new Promise(resolve => setTimeout(resolve, 1000));
+											}
+										}
+									}
+									
+									if (contentResponse && contentResponse.content) {
+										resolve(contentResponse.content);
+									} else {
+										reject(new Error('Failed to extract page content after multiple attempts'));
+									}
+								} catch (error) {
+									reject(error);
+								}
+							}, 3000); // Wait 3 seconds for content to be ready
+						}
+					}
+				};
+				
+				// Add the listener BEFORE navigating
+				browser.tabs.onUpdated.addListener(onUpdatedListener);
+				
+				// Navigate to the URL
+				browser.tabs.update(tabId, { url: url }).then(() => {
+					debugLog('NavigateAndExtract', 'Navigation command sent');
+					// Also check immediately in case the page is already loaded
+					browser.tabs.get(tabId).then((tab) => {
+						if (tab.status === 'complete') {
+							const currentUrl = tab.url || '';
+							const normalizedCurrentUrl = normalizeUrlForComparison(currentUrl);
+							if (normalizedCurrentUrl === normalizedTargetUrl) {
+								debugLog('NavigateAndExtract', 'Page already loaded');
+								onUpdatedListener(tabId, { status: 'complete' }, tab);
+							}
+						}
+					}).catch(() => {
+						// Ignore errors, the listener will handle it
+					});
+				}).catch((error) => {
+					browser.tabs.onUpdated.removeListener(onUpdatedListener);
+					if (timeoutId) {
+						clearTimeout(timeoutId);
+					}
+					reject(error);
+				});
+			});
+		}
+
+		/**
+		 * Navigates to a URL, extracts HTML, converts to markdown, and returns the markdown
+		 * This is the complete flow: navigate -> get HTML -> get markdown -> apply scraper
+		 */
+		async function navigateAndExtractMarkdown(tabId: number, url: string): Promise<string> {
+			return new Promise((resolve, reject) => {
+				let timeoutId: number | null = null;
+				let resolved = false;
+				const normalizedTargetUrl = normalizeUrlForComparison(url);
+				
+				debugLog('NavigateAndExtractMarkdown', `Navigating to: ${url}`);
+				
+				// Set a timeout to prevent infinite waiting
+				const maxWaitTime = 30000; // 30 seconds max
+				timeoutId = window.setTimeout(() => {
+					if (!resolved) {
+						resolved = true;
+						browser.tabs.onUpdated.removeListener(onUpdatedListener);
+						reject(new Error(`Timeout waiting for page to load: ${url}`));
+					}
+				}, maxWaitTime);
+				
+				// Wait for the page to load using tabs.onUpdated listener approach
+				const onUpdatedListener = async (updatedTabId: number, changeInfo: browser.Tabs.OnUpdatedChangeInfoType, updatedTab: browser.Tabs.Tab | undefined) => {
+					if (updatedTabId !== tabId) return;
+					
+					// Check if page is loading
+					if (changeInfo.status === 'loading') {
+						debugLog('NavigateAndExtractMarkdown', `Page ${updatedTabId} is loading...`);
+						return;
+					}
+					
+					// Check if page is complete
+					if (changeInfo.status === 'complete' && updatedTab) {
+						const currentUrl = updatedTab.url || '';
+						const normalizedCurrentUrl = normalizeUrlForComparison(currentUrl);
+						
+						debugLog('NavigateAndExtractMarkdown', `Page ${updatedTabId} complete. Current URL: ${currentUrl}, Target: ${url}`);
+						
+						// Check if URLs match (allowing for slight differences)
+						if (normalizedCurrentUrl === normalizedTargetUrl || currentUrl.includes(url.split('?')[0])) {
+							// Remove the listener
+							browser.tabs.onUpdated.removeListener(onUpdatedListener);
+							
+							if (resolved) return;
+							resolved = true;
+							
+							if (timeoutId) {
+								clearTimeout(timeoutId);
+							}
+							
+							debugLog('NavigateAndExtractMarkdown', 'URLs match, waiting for content script...');
+							
+							// Wait a bit more for content script and DOM to be ready
+							setTimeout(async () => {
+								try {
+									// Ensure content script is loaded - try multiple times
+									let contentScriptReady = false;
+									for (let attempt = 0; attempt < 5; attempt++) {
+										try {
+											await browser.runtime.sendMessage({ 
+												action: "sendMessageToTab", 
+												tabId: tabId, 
+												message: { action: "ping" }
+											});
+											contentScriptReady = true;
+											debugLog('NavigateAndExtractMarkdown', `Content script ready (attempt ${attempt + 1})`);
+											break;
+										} catch (pingError) {
+											debugLog('NavigateAndExtractMarkdown', `Content script ping failed (attempt ${attempt + 1}), injecting...`);
+											try {
+												await browser.scripting.executeScript({
+													target: { tabId: tabId },
+													files: ['content.js']
+												});
+												// Wait after injection
+												await new Promise(resolve => setTimeout(resolve, 1500));
+											} catch (injectError) {
+												console.warn('Content script injection failed:', injectError);
+											}
+										}
+									}
+									
+									if (!contentScriptReady) {
+										debugLog('NavigateAndExtractMarkdown', 'Content script not ready after attempts, trying to extract anyway...');
+									}
+									
+									// Extract page content (HTML) - try multiple times
+									let contentResponse = null;
+									for (let attempt = 0; attempt < 3; attempt++) {
+										try {
+											contentResponse = await extractPageContent(tabId);
+											if (contentResponse && contentResponse.content) {
+												debugLog('NavigateAndExtractMarkdown', `HTML extracted successfully (attempt ${attempt + 1})`);
+												break;
+											}
+										} catch (extractError) {
+											console.warn(`Content extraction attempt ${attempt + 1} failed:`, extractError);
+											if (attempt < 2) {
+												await new Promise(resolve => setTimeout(resolve, 1000));
+											}
+										}
+									}
+									
+									if (!contentResponse || !contentResponse.content) {
+										reject(new Error('Failed to extract page content after multiple attempts'));
+										return;
+									}
+									
+									debugLog('NavigateAndExtractMarkdown', 'Converting HTML to markdown...');
+									
+									// Initialize page content to get markdown
+									const initializedContent = await initializePageContent(
+										contentResponse.content,
+										contentResponse.selectedHtml,
+										contentResponse.extractedContent,
+										currentUrl,
+										contentResponse.schemaOrgData,
+										contentResponse.fullHtml,
+										contentResponse.highlights || [],
+										contentResponse.title,
+										contentResponse.author,
+										contentResponse.description,
+										contentResponse.favicon,
+										contentResponse.image,
+										contentResponse.published,
+										contentResponse.site,
+										contentResponse.wordCount,
+										contentResponse.metaTags
+									);
+									
+									if (!initializedContent || !initializedContent.currentVariables) {
+										reject(new Error('Failed to initialize page content'));
+										return;
+									}
+									
+									// Get the markdown from variables ({{content}} is the markdown)
+									const markdown = initializedContent.currentVariables['{{content}}'] || '';
+									
+									debugLog('NavigateAndExtractMarkdown', `Markdown conversion successful, length: ${markdown.length}`);
+									
+									resolve(markdown);
+								} catch (error) {
+									reject(error);
+								}
+							}, 3000); // Wait 3 seconds for content to be ready
+						}
+					}
+				};
+				
+				// Add the listener BEFORE navigating
+				browser.tabs.onUpdated.addListener(onUpdatedListener);
+				
+				// Navigate to the URL
+				browser.tabs.update(tabId, { url: url }).then(() => {
+					debugLog('NavigateAndExtractMarkdown', 'Navigation command sent');
+					// Also check immediately in case the page is already loaded
+					browser.tabs.get(tabId).then((tab) => {
+						if (tab.status === 'complete') {
+							const currentUrl = tab.url || '';
+							const normalizedCurrentUrl = normalizeUrlForComparison(currentUrl);
+							if (normalizedCurrentUrl === normalizedTargetUrl) {
+								debugLog('NavigateAndExtractMarkdown', 'Page already loaded');
+								onUpdatedListener(tabId, { status: 'complete' }, tab);
+							}
+						}
+					}).catch(() => {
+						// Ignore errors, the listener will handle it
+					});
+				}).catch((error) => {
+					browser.tabs.onUpdated.removeListener(onUpdatedListener);
+					if (timeoutId) {
+						clearTimeout(timeoutId);
+					}
+					reject(error);
+				});
+			});
+		}
+
+		const scrapeAllPagesBtn = document.getElementById('scrape-all-pages-btn') as HTMLButtonElement;
+		if (scrapeAllPagesBtn) {
+			scrapeAllPagesBtn.addEventListener('click', async (e) => {
+				e.preventDefault();
+				const noteContentField = document.getElementById('note-content-field') as HTMLTextAreaElement;
+				const noteNameField = document.getElementById('note-name-field') as HTMLTextAreaElement;
+				if (noteContentField && noteNameField && currentTabId) {
+					const saveJsonBtn = document.getElementById('save-json-btn') as HTMLButtonElement;
+					const obtainProductsBtn = document.getElementById('obtain-products-btn') as HTMLButtonElement;
+					
+					try {
+						scrapeAllPagesBtn.classList.add('processing');
+						scrapeAllPagesBtn.disabled = true;
+						
+						// Also disable other buttons
+						if (saveJsonBtn) {
+							saveJsonBtn.disabled = true;
+						}
+						if (obtainProductsBtn) {
+							obtainProductsBtn.disabled = true;
+						}
+						
+						// Get current page URL
+						const tab = await getTabInfo(currentTabId);
+						const baseUrl = tab.url;
+						
+						// Load saved parser code
+						debugLog('ScrapeAllPages', 'Loading saved parser code...');
+						const savedCode = await loadSavedParserCode(baseUrl);
+						
+						if (!savedCode) {
+							throw new Error('No saved parser code found for this page. Please use "Generate Code and Save" first to generate the parser code.');
+						}
+						
+						// Extract base URL without pagination - always use 'page' parameter
+						const urlObj = new URL(baseUrl);
+						
+						// Remove any existing pagination parameters to get base URL
+						urlObj.searchParams.delete('pagina');
+						urlObj.searchParams.delete('page');
+						const baseUrlWithoutPagination = urlObj.toString();
+						
+						// Always use 'page' parameter (not 'pagina')
+						const usePaginaParam = false;
+						
+						const allProducts: any[] = [];
+						let pageNumber = 1;
+						let hasMorePages = true;
+						
+						// First, scrape the current page
+						try {
+							// Update button text
+							scrapeAllPagesBtn.textContent = `${getMessage('processing')}...${pageNumber}`;
+							
+							debugLog('ScrapeAllPages', `Processing current page (page ${pageNumber})...`);
+							
+							// Get current page markdown (use noteContentField if available, otherwise extract and convert)
+							let currentPageMarkdown: string;
+							if (noteContentField.value && noteContentField.value.trim().length > 0) {
+								currentPageMarkdown = noteContentField.value;
+								debugLog('ScrapeAllPages', 'Using markdown from noteContentField');
+							} else {
+								debugLog('ScrapeAllPages', 'Extracting current page content and converting to markdown...');
+								// Extract HTML and convert to markdown
+								const contentResponse = await extractPageContent(currentTabId);
+								if (!contentResponse || !contentResponse.content) {
+									throw new Error('Failed to extract current page content');
+								}
+								
+								// Convert HTML to markdown
+								const tab = await getTabInfo(currentTabId);
+								const initializedContent = await initializePageContent(
+									contentResponse.content,
+									contentResponse.selectedHtml,
+									contentResponse.extractedContent,
+									tab.url,
+									contentResponse.schemaOrgData,
+									contentResponse.fullHtml,
+									contentResponse.highlights || [],
+									contentResponse.title,
+									contentResponse.author,
+									contentResponse.description,
+									contentResponse.favicon,
+									contentResponse.image,
+									contentResponse.published,
+									contentResponse.site,
+									contentResponse.wordCount,
+									contentResponse.metaTags
+								);
+								
+								if (!initializedContent || !initializedContent.currentVariables) {
+									throw new Error('Failed to convert HTML to markdown');
+								}
+								
+								// Get the markdown from variables ({{content}} is the markdown)
+								currentPageMarkdown = initializedContent.currentVariables['{{content}}'] || '';
+								debugLog('ScrapeAllPages', 'Markdown conversion successful');
+							}
+							
+							// Execute parser code on the markdown content
+							const extractedProducts = await executeParserCode(savedCode, currentPageMarkdown, currentTabId);
+							
+							// Check if we got products
+							if (!extractedProducts || extractedProducts.length === 0) {
+								debugLog('ScrapeAllPages', `No products found on current page, stopping.`);
+								hasMorePages = false;
+							} else {
+								// Add products to the accumulated list
+								allProducts.push(...extractedProducts);
+								debugLog('ScrapeAllPages', `Current page: Found ${extractedProducts.length} products. Total so far: ${allProducts.length}`);
+								
+								// Move to next page
+								pageNumber++;
+							}
+						} catch (pageError) {
+							console.error(`Error processing current page:`, pageError);
+							throw pageError;
+						}
+						
+						// Now iterate through remaining pages
+						let consecutiveFailures = 0;
+						const maxConsecutiveFailures = 2; // Allow 2 consecutive failures before stopping
+						
+						while (hasMorePages && pageNumber <= 100) { // Safety limit of 100 pages
+							try {
+								// Update button text
+								scrapeAllPagesBtn.textContent = `${getMessage('processing')}...${pageNumber}`;
+								
+								// Build URL for this page
+								const pageUrl = buildPaginationUrl(baseUrlWithoutPagination, pageNumber, usePaginaParam);
+								
+								debugLog('ScrapeAllPages', `Processing page ${pageNumber}: ${pageUrl}`);
+								
+								// Navigate to the page, extract HTML, convert to markdown - retry up to 3 times
+								let pageMarkdown: string | null = null;
+								let navigationSuccess = false;
+								
+								for (let navAttempt = 0; navAttempt < 3; navAttempt++) {
+									try {
+										// Complete flow: navigate -> get HTML -> get markdown
+										pageMarkdown = await navigateAndExtractMarkdown(currentTabId, pageUrl);
+										navigationSuccess = true;
+										debugLog('ScrapeAllPages', `Navigation and markdown extraction successful (attempt ${navAttempt + 1})`);
+										break;
+									} catch (navError) {
+										console.warn(`Navigation/markdown extraction attempt ${navAttempt + 1} failed for page ${pageNumber}:`, navError);
+										if (navAttempt < 2) {
+											await new Promise(resolve => setTimeout(resolve, 2000));
+										}
+									}
+								}
+								
+								if (!navigationSuccess || !pageMarkdown) {
+									throw new Error(`Failed to navigate to page ${pageNumber} and extract markdown after multiple attempts`);
+								}
+								
+								// Execute parser code on the markdown content
+								const extractedProducts = await executeParserCode(savedCode, pageMarkdown, currentTabId);
+								
+								// Check if we got products
+								if (!extractedProducts || extractedProducts.length === 0) {
+									debugLog('ScrapeAllPages', `No products found on page ${pageNumber}`);
+									consecutiveFailures++;
+									
+									if (consecutiveFailures >= maxConsecutiveFailures) {
+										debugLog('ScrapeAllPages', `Stopping after ${consecutiveFailures} consecutive pages with no products`);
+										hasMorePages = false;
+										break;
+									}
+									
+									// Try next page even if this one had no products
+									pageNumber++;
+									await new Promise(resolve => setTimeout(resolve, 1000));
+									continue;
+								}
+								
+								// Reset failure counter on success
+								consecutiveFailures = 0;
+								
+								// Add products to the accumulated list
+								allProducts.push(...extractedProducts);
+								debugLog('ScrapeAllPages', `Page ${pageNumber}: Found ${extractedProducts.length} products. Total so far: ${allProducts.length}`);
+								
+								// Move to next page
+								pageNumber++;
+								
+								// Small delay between pages to avoid overwhelming the server
+								await new Promise(resolve => setTimeout(resolve, 1500));
+								
+							} catch (pageError) {
+								console.error(`Error processing page ${pageNumber}:`, pageError);
+								consecutiveFailures++;
+								
+								if (consecutiveFailures >= maxConsecutiveFailures) {
+									debugLog('ScrapeAllPages', `Stopping after ${consecutiveFailures} consecutive errors`);
+									hasMorePages = false;
+									break;
+								}
+								
+								// Try next page even if this one failed
+								debugLog('ScrapeAllPages', `Retrying next page after error (failure ${consecutiveFailures}/${maxConsecutiveFailures})`);
+								pageNumber++;
+								await new Promise(resolve => setTimeout(resolve, 2000));
+							}
+						}
+						
+						// Save the accumulated results
+						debugLog('ScrapeAllPages', `Saving results: ${allProducts.length} total products from ${pageNumber - 1} pages`);
+						const sanitizedTitle = noteNameField.value.replace(/[\\/:*?"<>|]/g, '').trim() || 'untitled';
+						const jsonFileName = `code-generated/${sanitizedTitle}/extracted-products-all-pages.json`;
+						
+						await saveFile({
+							content: JSON.stringify(allProducts, null, 2),
+							fileName: jsonFileName,
+							mimeType: 'application/json',
+							tabId: currentTabId
+						});
+						
+						debugLog('ScrapeAllPages', 'Process completed successfully');
+						scrapeAllPagesBtn.textContent = `Completed: ${allProducts.length} products from ${pageNumber - 1} pages`;
+						
+					} catch (error) {
+						console.error('Failed to scrape all pages:', error);
+						alert(getMessage('scrapeAllPagesError'));
+						scrapeAllPagesBtn.textContent = getMessage('scrapeAllPages');
+					} finally {
+						scrapeAllPagesBtn.classList.remove('processing');
+						scrapeAllPagesBtn.disabled = false;
+						
+						// Re-enable other buttons
+						if (saveJsonBtn) {
+							saveJsonBtn.disabled = false;
+						}
+						if (obtainProductsBtn) {
+							obtainProductsBtn.disabled = false;
+						}
+						
+						// Reset button text after a delay
+						setTimeout(() => {
+							scrapeAllPagesBtn.textContent = getMessage('scrapeAllPages');
+						}, 3000);
+					}
+				}
+			});
+		}
+
 		// Initialize the rest of the popup
 		if (currentTabId) {
 			const initialized = await initializeExtension(currentTabId);

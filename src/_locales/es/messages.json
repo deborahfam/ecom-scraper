@@ -848,5 +848,11 @@
 	},
 	"obtainProductsError": {
 		"message": "Error al obtener productos. Revisa la consola para más detalles."
+	},
+	"scrapeAllPages": {
+		"message": "Scrapear Todas las Páginas"
+	},
+	"scrapeAllPagesError": {
+		"message": "Error al scrapear todas las páginas. Revisa la consola para más detalles."
 	}
 }

@@ -840,5 +840,11 @@
 	},
 	"obtainProductsError": {
 		"message": "Failed to obtain products. Check console for details."
+	},
+	"scrapeAllPages": {
+		"message": "Scrape All Pages"
+	},
+	"scrapeAllPagesError": {
+		"message": "Failed to scrape all pages. Check console for details."
 	}
 }
