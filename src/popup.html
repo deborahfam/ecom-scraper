@@ -43,23 +43,34 @@
 				<textarea id="note-content-field" rows="4" data-i18n="notesAboutPage"></textarea>
 			</div>
 			<div class="clipper-footer">
-				<div class="vault-path-container">
-					<div id="vault-container" style="display: none;">
-						<select id="vault-select"></select>
+				<!-- Main Actions Group -->
+				<div class="action-group main-actions">
+					<button id="save-json-btn" class="btn-primary btn-orange" data-i18n="generateCodeAndSave">Generar Código y Guardar</button>
+					<button id="obtain-products-btn" class="btn-secondary btn-black" data-i18n="obtainProducts">Obtain Products</button>
+				</div>
+				
+				<!-- Scraping Configuration Group -->
+				<div class="action-group scraping-config">
+					<div class="config-header">
+						<span class="config-title" data-i18n="scrapingSettings">Scraping Settings</span>
 					</div>
-					<input id="path-name-field" type="text" data-i18n="folder"/>
+					<div class="config-options">
+						<div class="config-option">
+							<input type="checkbox" id="use-pagina-param" class="config-checkbox">
+							<label for="use-pagina-param" class="config-label" data-i18n="usePaginaParam">Usar parámetro 'pagina' en lugar de 'page'</label>
+						</div>
+						<div class="config-option">
+							<label for="max-pages-input" class="config-label" data-i18n="maxPages">Máximo de páginas:</label>
+							<input type="number" id="max-pages-input" class="config-input" min="1" max="10000" value="500">
+						</div>
+					</div>
 				</div>
-				<button id="save-json-btn" class="mod-cta" style="width: 100%;" data-i18n="generateCodeAndSave">Generar Código y Guardar</button>
-				<button id="obtain-products-btn" class="mod-cta" style="width: 100%; margin-top: 8px;" data-i18n="obtainProducts">Obtain Products</button>
-				<div style="margin-top: 8px; display: flex; align-items: center; gap: 8px;">
-					<input type="checkbox" id="use-pagina-param" style="margin: 0;">
-					<label for="use-pagina-param" style="margin: 0; font-size: 14px; cursor: pointer;" data-i18n="usePaginaParam">Usar parámetro 'pagina' en lugar de 'page'</label>
+				
+				<!-- Scrape All Pages Button -->
+				<div class="action-group scrape-all-group">
+					<button id="scrape-all-pages-btn" class="btn-primary btn-orange btn-large" data-i18n="scrapeAllPages">Scrape All Pages</button>
+					<button id="stop-scraper-btn" class="btn-secondary btn-black" style="display: none;" data-i18n="stopScraperAndSave">Detener y Guardar</button>
 				</div>
-				<div style="margin-top: 8px; display: flex; align-items: center; gap: 8px;">
-					<label for="max-pages-input" style="margin: 0; font-size: 14px;" data-i18n="maxPages">Máximo de páginas:</label>
-					<input type="number" id="max-pages-input" min="1" max="10000" value="500" style="width: 80px; padding: 4px; font-size: 14px;">
-				</div>
-				<button id="scrape-all-pages-btn" class="mod-cta" style="width: 100%; margin-top: 8px;" data-i18n="scrapeAllPages">Scrape All Pages</button>
 			</div>
 		</div>
 		<script type="module" src="popup.js"></script>

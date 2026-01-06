@@ -852,5 +852,14 @@
 	},
 	"maxPages": {
 		"message": "Max pages:"
+	},
+	"scrapingSettings": {
+		"message": "Scraping Settings"
+	},
+	"stopScraperAndSave": {
+		"message": "Stop and Save"
+	},
+	"stopping": {
+		"message": "Stopping..."
 	}
 }

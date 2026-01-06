@@ -860,5 +860,14 @@
 	},
 	"maxPages": {
 		"message": "Máximo de páginas:"
+	},
+	"scrapingSettings": {
+		"message": "Configuración de Scraping"
+	},
+	"stopScraperAndSave": {
+		"message": "Detener y Guardar"
+	},
+	"stopping": {
+		"message": "Deteniendo..."
 	}
 }

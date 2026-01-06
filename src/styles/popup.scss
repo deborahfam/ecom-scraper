@@ -145,14 +145,208 @@
 		width: 100%;
 		display: flex;
 		flex-direction: column;
-		gap: 0.625rem;
-		padding: 0.625rem;
+		gap: 0.75rem;
+		padding: 0.875rem;
 		border-top: 1px solid var(--divider-color);
 		background-color: var(--background-primary);
 		button {
 			font-weight: var(--clipper-button-font-weight);
 			font-size: var(--clipper-button-font-size);
 		}
+	}
+	
+	// Action Groups
+	.action-group {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+		
+		&.main-actions {
+			gap: 0.625rem;
+		}
+		
+		&.scraping-config {
+			background: var(--background-secondary);
+			border-radius: var(--radius-m);
+			padding: 0.875rem;
+			border: 1px solid var(--background-modifier-border);
+			box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+		}
+		
+		&.scrape-all-group {
+			margin-top: 0.25rem;
+			gap: 0.5rem;
+			
+			#stop-scraper-btn {
+				margin-top: 0.5rem;
+			}
+		}
+	}
+	
+	.config-header {
+		margin-bottom: 0.5rem;
+	}
+	
+	.config-title {
+		font-size: var(--font-ui-smaller);
+		font-weight: 600;
+		color: var(--text-normal);
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+	}
+	
+	.config-options {
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+	}
+	
+	.config-option {
+		display: flex;
+		align-items: center;
+		gap: 0.625rem;
+		
+		&:has(.config-input) {
+			justify-content: space-between;
+		}
+	}
+	
+	.config-checkbox {
+		margin: 0;
+		width: 18px;
+		height: 18px;
+		cursor: pointer;
+		accent-color: #ff6b35;
+		
+		&:hover {
+			opacity: 0.8;
+		}
+	}
+	
+	.config-label {
+		margin: 0;
+		font-size: var(--font-ui-smaller);
+		cursor: pointer;
+		color: var(--text-normal);
+		line-height: 1.4;
+		flex: 1;
+		
+		&:hover {
+			color: var(--text-accent);
+		}
+	}
+	
+	.config-input {
+		width: 90px;
+		padding: 0.375rem 0.5rem;
+		font-size: var(--font-ui-smaller);
+		border-radius: var(--radius-s);
+		border: 1px solid var(--background-modifier-border);
+		background-color: var(--background-primary);
+		color: var(--text-normal);
+		text-align: center;
+		transition: all 0.2s ease-in-out;
+		
+		&:focus {
+			outline: none;
+			border-color: #ff6b35;
+			box-shadow: 0 0 0 2px rgba(255, 107, 53, 0.2);
+		}
+		
+		&:hover {
+			border-color: var(--background-modifier-border-hover);
+		}
+		
+		&::-webkit-inner-spin-button,
+		&::-webkit-outer-spin-button {
+			opacity: 1;
+		}
+	}
+	
+	// Button Styles - Orange and Black Theme
+	.btn-primary {
+		width: 100%;
+		padding: 0.625rem 1rem;
+		border-radius: var(--radius-m);
+		font-weight: 600;
+		font-size: var(--font-ui-small);
+		border: none;
+		cursor: pointer;
+		transition: all 0.2s ease-in-out;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
+		
+		&.btn-orange {
+			background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+			color: white;
+			box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3);
+			
+			&:hover:not(:disabled) {
+				background: linear-gradient(135deg, #ff7b45 0%, #ffa31e 100%);
+				box-shadow: 0 4px 12px rgba(255, 107, 53, 0.4);
+				transform: translateY(-1px);
+			}
+			
+			&:active:not(:disabled) {
+				transform: translateY(0);
+				box-shadow: 0 2px 6px rgba(255, 107, 53, 0.3);
+			}
+			
+			&.processing {
+				opacity: 0.7;
+				cursor: wait;
+			}
+		}
+		
+		&.btn-large {
+			padding: 0.75rem 1.25rem;
+			font-size: var(--font-ui-medium);
+		}
+	}
+	
+	.btn-secondary {
+		width: 100%;
+		padding: 0.625rem 1rem;
+		border-radius: var(--radius-m);
+		font-weight: 600;
+		font-size: var(--font-ui-small);
+		border: none;
+		cursor: pointer;
+		transition: all 0.2s ease-in-out;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
+		
+		&.btn-black {
+			background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+			color: white;
+			box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+			
+			&:hover:not(:disabled) {
+				background: linear-gradient(135deg, #2a2a2a 0%, #3d3d3d 100%);
+				box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+				transform: translateY(-1px);
+			}
+			
+			&:active:not(:disabled) {
+				transform: translateY(0);
+				box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+			}
+			
+			&.processing {
+				opacity: 0.7;
+				cursor: wait;
+			}
+		}
+	}
+	
+	button:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+		transform: none !important;
 	}
 	.vault-path-container {
 		display: flex;

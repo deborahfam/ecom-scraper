@@ -36,6 +36,7 @@ let templates: Template[] = [];
 let currentVariables: { [key: string]: string } = {};
 let currentTabId: number | undefined;
 let lastSelectedVault: string | null = null;
+let shouldStopScraper: boolean = false;
 
 const isSidePanel = window.location.pathname.includes('side-panel.html');
 const urlParams = new URLSearchParams(window.location.search);
@@ -851,6 +852,17 @@ document.addEventListener('DOMContentLoaded', async function() {
 					const saveJsonBtn = document.getElementById('save-json-btn') as HTMLButtonElement;
 					const obtainProductsBtn = document.getElementById('obtain-products-btn') as HTMLButtonElement;
 					
+					// Reset stop flag
+					shouldStopScraper = false;
+					
+					// Show stop button and reset its text
+					const stopScraperBtn = document.getElementById('stop-scraper-btn') as HTMLButtonElement;
+					if (stopScraperBtn) {
+						stopScraperBtn.style.display = 'block';
+						stopScraperBtn.disabled = false;
+						stopScraperBtn.textContent = getMessage('stopScraperAndSave');
+					}
+					
 					try {
 						scrapeAllPagesBtn.classList.add('processing');
 						scrapeAllPagesBtn.disabled = true;
@@ -969,8 +981,14 @@ document.addEventListener('DOMContentLoaded', async function() {
 						let consecutiveFailures = 0;
 						const maxConsecutiveFailures = 2; // Allow 2 consecutive failures before stopping
 						
-						while (hasMorePages && pageNumber <= maxPages) { // User-configurable limit
+						while (hasMorePages && pageNumber <= maxPages && !shouldStopScraper) { // User-configurable limit
 							try {
+								// Check if user wants to stop
+								if (shouldStopScraper) {
+									debugLog('ScrapeAllPages', 'User requested to stop scraper');
+									break;
+								}
+								
 								// Update button text
 								scrapeAllPagesBtn.textContent = `${getMessage('processing')}...${pageNumber}`;
 								
@@ -1035,6 +1053,12 @@ document.addEventListener('DOMContentLoaded', async function() {
 								// Small delay between pages to avoid overwhelming the server
 								await new Promise(resolve => setTimeout(resolve, 1500));
 								
+								// Check again if user wants to stop after delay
+								if (shouldStopScraper) {
+									debugLog('ScrapeAllPages', 'User requested to stop scraper after delay');
+									break;
+								}
+								
 							} catch (pageError) {
 								console.error(`Error processing page ${pageNumber}:`, pageError);
 								consecutiveFailures++;
@@ -1053,7 +1077,9 @@ document.addEventListener('DOMContentLoaded', async function() {
 						}
 						
 						// Save the accumulated results
-						debugLog('ScrapeAllPages', `Saving results: ${allProducts.length} total products from ${pageNumber - 1} pages`);
+						const wasStopped = shouldStopScraper;
+						const pagesProcessed = wasStopped ? pageNumber - 1 : pageNumber - 1;
+						debugLog('ScrapeAllPages', `Saving results: ${allProducts.length} total products from ${pagesProcessed} pages${wasStopped ? ' (stopped by user)' : ''}`);
 						const sanitizedTitle = noteNameField.value.replace(/[\\/:*?"<>|]/g, '').trim() || 'untitled';
 						const jsonFileName = `code-generated/${sanitizedTitle}/extracted-products-all-pages.json`;
 						
@@ -1065,7 +1091,11 @@ document.addEventListener('DOMContentLoaded', async function() {
 						});
 						
 						debugLog('ScrapeAllPages', 'Process completed successfully');
-						scrapeAllPagesBtn.textContent = `Completed: ${allProducts.length} products from ${pageNumber - 1} pages`;
+						if (wasStopped) {
+							scrapeAllPagesBtn.textContent = `Stopped: ${allProducts.length} products from ${pagesProcessed} pages saved`;
+						} else {
+							scrapeAllPagesBtn.textContent = `Completed: ${allProducts.length} products from ${pagesProcessed} pages`;
+						}
 						
 					} catch (error) {
 						console.error('Failed to scrape all pages:', error);
@@ -1075,6 +1105,13 @@ document.addEventListener('DOMContentLoaded', async function() {
 						scrapeAllPagesBtn.classList.remove('processing');
 						scrapeAllPagesBtn.disabled = false;
 						
+						// Hide stop button and show scrape button
+						const stopScraperBtn = document.getElementById('stop-scraper-btn') as HTMLButtonElement;
+						if (stopScraperBtn) {
+							stopScraperBtn.style.display = 'none';
+							stopScraperBtn.disabled = false;
+						}
+						
 						// Re-enable other buttons
 						if (saveJsonBtn) {
 							saveJsonBtn.disabled = false;
@@ -1082,6 +1119,9 @@ document.addEventListener('DOMContentLoaded', async function() {
 						if (obtainProductsBtn) {
 							obtainProductsBtn.disabled = false;
 						}
+						
+						// Reset stop flag
+						shouldStopScraper = false;
 						
 						// Reset button text after a delay
 						setTimeout(() => {
@@ -1092,6 +1132,19 @@ document.addEventListener('DOMContentLoaded', async function() {
 			});
 		}
 
+		// Add event listener for stop scraper button
+		const stopScraperBtn = document.getElementById('stop-scraper-btn') as HTMLButtonElement;
+		if (stopScraperBtn) {
+			stopScraperBtn.addEventListener('click', async (e) => {
+				e.preventDefault();
+				shouldStopScraper = true;
+				debugLog('ScrapeAllPages', 'Stop scraper button clicked');
+				
+				// Disable the stop button to prevent multiple clicks
+				stopScraperBtn.disabled = true;
+				stopScraperBtn.textContent = getMessage('stopping') || 'Stopping...';
+			});
+		}
 		// Initialize the rest of the popup
 		if (currentTabId) {
 			const initialized = await initializeExtension(currentTabId);
