@@ -473,7 +473,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
 		/**
 		 * Builds a URL with pagination parameter
-		 * Always uses 'page' parameter (usePaginaParam should always be false)
+		 * Uses 'page' or 'pagina' parameter based on usePaginaParam setting
 		 */
 		function buildPaginationUrl(baseUrl: string, pageNumber: number, usePaginaParam: boolean): string {
 			try {
@@ -875,7 +875,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 							throw new Error('No saved parser code found for this page. Please use "Generate Code and Save" first to generate the parser code.');
 						}
 						
-						// Extract base URL without pagination - always use 'page' parameter
+						// Extract base URL without pagination
 						const urlObj = new URL(baseUrl);
 						
 						// Remove any existing pagination parameters to get base URL
@@ -883,8 +883,13 @@ document.addEventListener('DOMContentLoaded', async function() {
 						urlObj.searchParams.delete('page');
 						const baseUrlWithoutPagination = urlObj.toString();
 						
-						// Always use 'page' parameter (not 'pagina')
-						const usePaginaParam = false;
+						// Read user preference for pagination parameter
+						const usePaginaParamCheckbox = document.getElementById('use-pagina-param') as HTMLInputElement;
+						const usePaginaParam = usePaginaParamCheckbox ? usePaginaParamCheckbox.checked : false;
+						
+						// Read user preference for maximum pages
+						const maxPagesInput = document.getElementById('max-pages-input') as HTMLInputElement;
+						const maxPages = maxPagesInput ? parseInt(maxPagesInput.value, 10) || 500 : 500;
 						
 						const allProducts: any[] = [];
 						let pageNumber = 1;
@@ -964,7 +969,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 						let consecutiveFailures = 0;
 						const maxConsecutiveFailures = 2; // Allow 2 consecutive failures before stopping
 						
-						while (hasMorePages && pageNumber <= 100) { // Safety limit of 100 pages
+						while (hasMorePages && pageNumber <= maxPages) { // User-configurable limit
 							try {
 								// Update button text
 								scrapeAllPagesBtn.textContent = `${getMessage('processing')}...${pageNumber}`;

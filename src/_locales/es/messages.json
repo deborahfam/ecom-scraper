@@ -854,5 +854,11 @@
 	},
 	"scrapeAllPagesError": {
 		"message": "Error al scrapear todas las páginas. Revisa la consola para más detalles."
+	},
+	"usePaginaParam": {
+		"message": "Usar parámetro 'pagina' en lugar de 'page'"
+	},
+	"maxPages": {
+		"message": "Máximo de páginas:"
 	}
 }

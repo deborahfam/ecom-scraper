@@ -846,5 +846,11 @@
 	},
 	"scrapeAllPagesError": {
 		"message": "Failed to scrape all pages. Check console for details."
+	},
+	"usePaginaParam": {
+		"message": "Use 'pagina' parameter instead of 'page'"
+	},
+	"maxPages": {
+		"message": "Max pages:"
 	}
 }
